@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clonal Succession Simulation - Round Cage</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    svg {
+      background: #222;
+      border: 1px solid #555;
+      border-radius: 10px;
+    }
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .stats {
+      margin-top: 20px;
+      display: flex;
+      gap: 30px;
+      font-size: 14px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .red-clone { fill: #ff4444; }
+    .green-clone { fill: #44ff44; }
+    .yellow-clone { fill: #ffff44; }
+    .dying-cell { fill: #888888; opacity: 0.5; }
+    
+    .cage {
+      fill: none;
+      stroke: #00e676;
+      stroke-width: 3;
+    }
+    .stem-cell {
+      stroke: white;
+      stroke-width: 3;
+    }
+    .stem-active {
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+    .stem-dormant {
+      opacity: 0.3;
+    }
+    
+    button {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
+    <button onclick="resetSimulation()">🔄 Reset</button>
+    <button onclick="exportState()">💾 Export State</button>
+    <label>Speed: <input type="range" id="speedControl" min="0.1" max="3" step="0.1" value="1" onchange="updateSpeed()"></label>
+  </div>
+
+  <svg id="sim" width="600" height="600" viewBox="0 0 600 600">
+    <!-- Round cage -->
+    <circle class="cage" cx="300" cy="300" r="200" />
+    
+    <!-- Stem cell positions (triangular arrangement) -->
+    <circle id="stem-red" class="stem-cell red-clone stem-active" cx="300" cy="150" r="12" />
+    <circle id="stem-green" class="stem-cell green-clone stem-dormant" cx="226" cy="350" r="12" />
+    <circle id="stem-yellow" class="stem-cell yellow-clone stem-dormant" cx="374" cy="350" r="12" />
+  </svg>
+
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-value" id="total-count">0</div>
+      <div>Total Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value red-clone" id="red-count">0</div>
+      <div>Red Clone</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value green-clone" id="green-count">0</div>
+      <div>Green Clone</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value yellow-clone" id="yellow-count">0</div>
+      <div>Yellow Clone</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="active-clone">Red</div>
+      <div>Active Clone</div>
+    </div>
+  </div>
+
+  <script>
+    const svg = document.getElementById("sim");
+    const CAGE_CENTER = { x: 300, y: 300 };
+    const CAGE_RADIUS = 200;
+    const MAX_POPULATION = 100;
+    const CELL_RADIUS = 6;
+    
+    // Simulation state
+    let cells = [];
+    let stemCells = {
+      red: { x: 300, y: 150, active: true, divisionsLeft: 25 },
+      green: { x: 226, y: 350, active: false, divisionsLeft: 25 },
+      yellow: { x: 374, y: 350, active: false, divisionsLeft: 25 }
+    };
+    let activeClone = 'red';
+    let simulationRunning = true;
+    let simulationSpeed = 1;
+    let tickCount = 0;
+    let stateHistory = [];
+
+    // Cell class with properties
+    class Cell {
+      constructor(x, y, clone, age = 0) {
+        this.x = x;
+        this.y = y;
+        this.clone = clone;
+        this.age = age;
+        this.maxAge = 50 + Math.random() * 30; // Variable lifespan
+        this.isDying = false;
+        this.id = Math.random().toString(36).substr(2, 9);
+      }
+
+      update() {
+        this.age++;
+        if (this.age > this.maxAge) {
+          this.isDying = true;
+        }
+      }
+
+      isInsideCage() {
+        const dist = Math.sqrt((this.x - CAGE_CENTER.x) ** 2 + (this.y - CAGE_CENTER.y) ** 2);
+        return dist <= (CAGE_RADIUS - CELL_RADIUS);
+      }
+    }
+
+    function initializeSimulation() {
+      cells = [];
+      // Start with a few red cells near the red stem cell
+      for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 * i) / 5;
+        const dist = 30;
+        cells.push(new Cell(
+          stemCells.red.x + Math.cos(angle) * dist,
+          stemCells.red.y + Math.sin(angle) * dist,
+          'red'
+        ));
+      }
+      tickCount = 0;
+      updateStemCellVisuals();
+    }
+
+    function updateStemCellVisuals() {
+      ['red', 'green', 'yellow'].forEach(color => {
+        const stemEl = document.getElementById(`stem-${color}`);
+        if (stemCells[color].active) {
+          stemEl.classList.remove('stem-dormant');
+          stemEl.classList.add('stem-active');
+        } else {
+          stemEl.classList.remove('stem-active');
+          stemEl.classList.add('stem-dormant');
+        }
+      });
+    }
+
+    function drawCells() {
+      // Remove old cell elements
+      svg.querySelectorAll(".cell").forEach(cell => svg.removeChild(cell));
+
+      // Draw new cells
+      cells.forEach(cell => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cell.x);
+        circle.setAttribute("cy", cell.y);
+        circle.setAttribute("r", CELL_RADIUS);
+        circle.setAttribute("class", `cell ${cell.clone}-clone ${cell.isDying ? 'dying-cell' : ''}`);
+        circle.setAttribute("data-id", cell.id);
+        svg.appendChild(circle);
+      });
+    }
+
+    function divideCells() {
+      if (!stemCells[activeClone].active || stemCells[activeClone].divisionsLeft <= 0) {
+        return;
+      }
+
+      const activeCells = cells.filter(c => c.clone === activeClone && !c.isDying);
+      const newCells = [];
+
+      activeCells.forEach(cell => {
+        // Division probability decreases as population approaches limit
+        const populationPressure = cells.length / MAX_POPULATION;
+        const divisionChance = 0.3 * (1 - populationPressure) * (1 - cell.age / cell.maxAge);
+        
+        if (Math.random() < divisionChance && cells.length < MAX_POPULATION) {
+          // Create new cell nearby
+          const angle = Math.random() * 2 * Math.PI;
+          const dist = CELL_RADIUS * 2.5;
+          const newX = cell.x + Math.cos(angle) * dist;
+          const newY = cell.y + Math.sin(angle) * dist;
+          
+          const newCell = new Cell(newX, newY, activeClone);
+          if (newCell.isInsideCage()) {
+            newCells.push(newCell);
+            stemCells[activeClone].divisionsLeft--;
+          }
+        }
+      });
+
+      cells.push(...newCells);
+    }
+
+    function updateCells() {
+      // Update all cells
+      cells.forEach(cell => cell.update());
+      
+      // Remove dying cells
+      cells = cells.filter(cell => !cell.isDying);
+      
+      // Check for clone succession
+      checkCloneSuccession();
+    }
+
+    function checkCloneSuccession() {
+      const activeCells = cells.filter(c => c.clone === activeClone && !c.isDying);
+      const totalCells = cells.length;
+      
+      // Trigger succession if active clone is exhausted or population is low
+      if (stemCells[activeClone].divisionsLeft <= 0 || 
+          activeCells.length < totalCells * 0.3 || 
+          totalCells < MAX_POPULATION * 0.7) {
+        
+        // Find next clone to activate
+        const cloneOrder = ['red', 'green', 'yellow'];
+        const currentIndex = cloneOrder.indexOf(activeClone);
+        const nextIndex = (currentIndex + 1) % cloneOrder.length;
+        const nextClone = cloneOrder[nextIndex];
+        
+        if (stemCells[nextClone].divisionsLeft > 0) {
+          // Deactivate current clone
+          stemCells[activeClone].active = false;
+          
+          // Activate next clone
+          activeClone = nextClone;
+          stemCells[activeClone].active = true;
+          
+          updateStemCellVisuals();
+          
+          // Add some initial cells for the new clone
+          addInitialCloneCells(activeClone);
+        }
+      }
+    }
+
+    function addInitialCloneCells(clone) {
+      const stemCell = stemCells[clone];
+      for (let i = 0; i < 3; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = 25;
+        cells.push(new Cell(
+          stemCell.x + Math.cos(angle) * dist,
+          stemCell.y + Math.sin(angle) * dist,
+          clone
+        ));
+      }
+    }
+
+    function updateStats() {
+      const counts = { red: 0, green: 0, yellow: 0 };
+      cells.forEach(cell => {
+        if (!cell.isDying) counts[cell.clone]++;
+      });
+
+      document.getElementById('total-count').textContent = cells.length;
+      document.getElementById('red-count').textContent = counts.red;
+      document.getElementById('green-count').textContent = counts.green;
+      document.getElementById('yellow-count').textContent = counts.yellow;
+      document.getElementById('active-clone').textContent = activeClone.charAt(0).toUpperCase() + activeClone.slice(1);
+    }
+
+    function saveState() {
+      stateHistory.push({
+        tick: tickCount,
+        cells: cells.map(c => ({...c})),
+        stemCells: JSON.parse(JSON.stringify(stemCells)),
+        activeClone: activeClone
+      });
+      
+      // Keep only last 100 states to prevent memory issues
+      if (stateHistory.length > 100) {
+        stateHistory.shift();
+      }
+    }
+
+    function tick() {
+      if (!simulationRunning) return;
+      
+      divideCells();
+      updateCells();
+      drawCells();
+      updateStats();
+      saveState();
+      
+      tickCount++;
+    }
+
+    function toggleSimulation() {
+      simulationRunning = !simulationRunning;
+    }
+
+    function resetSimulation() {
+      initializeSimulation();
+      drawCells();
+      updateStats();
+    }
+
+    function updateSpeed() {
+      simulationSpeed = parseFloat(document.getElementById('speedControl').value);
+    }
+
+    function exportState() {
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        finalState: {
+          cells: cells,
+          stemCells: stemCells,
+          activeClone: activeClone,
+          tickCount: tickCount
+        },
+        history: stateHistory
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clonal-succession-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize and start simulation
+    initializeSimulation();
+    drawCells();
+    updateStats();
+    
+    // Main simulation loop with variable speed
+    setInterval(() => {
+      tick();
+    }, 1000 / simulationSpeed);
+  </script>
+</body>
+</html>

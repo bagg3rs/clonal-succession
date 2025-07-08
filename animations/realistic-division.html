@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clonal Succession - Realistic Cell Division</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    svg {
+      background: #222;
+      border: 1px solid #555;
+      border-radius: 10px;
+    }
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .stats {
+      margin-top: 20px;
+      display: flex;
+      gap: 30px;
+      font-size: 14px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff4444;
+    }
+    
+    .red-clone { 
+      fill: #ff4444; 
+      stroke: #ff6666;
+      stroke-width: 1;
+    }
+    .green-clone { 
+      fill: #44ff44; 
+      stroke: #66ff66;
+      stroke-width: 1;
+    }
+    .yellow-clone { 
+      fill: #ffff44; 
+      stroke: #ffff66;
+      stroke-width: 1;
+    }
+    .dying-cell { 
+      fill: #888888; 
+      opacity: 0.3; 
+    }
+    
+    .cage {
+      fill: none;
+      stroke: #00e676;
+      stroke-width: 3;
+    }
+    .stem-cell {
+      stroke: white;
+      stroke-width: 3;
+    }
+    .stem-active {
+      filter: drop-shadow(0 0 15px currentColor);
+      animation: pulse 3s infinite ease-in-out;
+    }
+    .stem-dormant {
+      opacity: 0.2;
+    }
+    
+    .cell {
+      transition: all 0.1s ease;
+    }
+    
+    .dividing {
+      animation: cellDivision 2s ease-in-out forwards;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.8; }
+    }
+    
+    @keyframes cellDivision {
+      0% { 
+        transform: scale(1); 
+        opacity: 1; 
+      }
+      25% { 
+        transform: scale(1.4); 
+        opacity: 0.9; 
+      }
+      50% { 
+        transform: scale(1.6) scaleY(0.8); 
+        opacity: 0.8; 
+      }
+      75% { 
+        transform: scale(1.2) scaleY(1.2); 
+        opacity: 0.9; 
+      }
+      100% { 
+        transform: scale(1); 
+        opacity: 1; 
+      }
+    }
+    
+    button {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
+    <button onclick="resetSimulation()">🔄 Reset</button>
+    <button onclick="exportState()">💾 Export State</button>
+    <label>Speed: <input type="range" id="speedControl" min="0.1" max="3" step="0.1" value="1" onchange="updateSpeed()"></label>
+  </div>
+
+  <svg id="sim" width="600" height="600" viewBox="0 0 600 600">
+    <!-- Round cage -->
+    <circle class="cage" cx="300" cy="300" r="200" />
+    
+    <!-- Only red stem cell visible and active initially -->
+    <circle id="stem-red" class="stem-cell red-clone stem-active" cx="300" cy="150" r="12" />
+    <circle id="stem-green" class="stem-cell green-clone stem-dormant" cx="226" cy="350" r="12" style="display: none;" />
+    <circle id="stem-yellow" class="stem-cell yellow-clone stem-dormant" cx="374" cy="350" r="12" style="display: none;" />
+  </svg>
+
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-value" id="total-count">1</div>
+      <div>Red Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="divisions-left">25</div>
+      <div>Divisions Left</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="generation">1</div>
+      <div>Generation</div>
+    </div>
+  </div>
+
+  <script>
+    const svg = document.getElementById("sim");
+    const CAGE_CENTER = { x: 300, y: 300 };
+    const CAGE_RADIUS = 200;
+    const MAX_POPULATION = 100;
+    const CELL_RADIUS = 8;
+    
+    // Simulation state - ONLY RED CELLS
+    let cells = [];
+    let divisionsLeft = 25;
+    let simulationRunning = true;
+    let simulationSpeed = 1;
+    let tickCount = 0;
+    let generation = 1;
+    let stateHistory = [];
+
+    // Cell class for red cells only
+    class Cell {
+      constructor(x, y, age = 0, generation = 1) {
+        this.x = x;
+        this.y = y;
+        this.age = age;
+        this.generation = generation;
+        this.maxAge = 40 + Math.random() * 20;
+        this.isDying = false;
+        this.isDividing = false;
+        this.id = Math.random().toString(36).substr(2, 9);
+        
+        // Fluid movement properties
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.canDivide = true;
+        this.divisionCooldown = 0;
+      }
+
+      update() {
+        this.age++;
+        if (this.divisionCooldown > 0) this.divisionCooldown--;
+        
+        if (this.age > this.maxAge) {
+          this.isDying = true;
+        }
+        
+        // Gentle fluid movement
+        this.vx += (Math.random() - 0.5) * 0.05;
+        this.vy += (Math.random() - 0.5) * 0.05;
+        
+        // Damping
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Keep cells inside cage
+        const distFromCenter = Math.sqrt((this.x - CAGE_CENTER.x) ** 2 + (this.y - CAGE_CENTER.y) ** 2);
+        if (distFromCenter > CAGE_RADIUS - CELL_RADIUS) {
+          const angle = Math.atan2(this.y - CAGE_CENTER.y, this.x - CAGE_CENTER.x);
+          const pushBack = (distFromCenter - (CAGE_RADIUS - CELL_RADIUS)) * 0.2;
+          this.vx -= Math.cos(angle) * pushBack;
+          this.vy -= Math.sin(angle) * pushBack;
+        }
+        
+        // Cell repulsion for natural spacing
+        this.applyRepulsion();
+      }
+      
+      applyRepulsion() {
+        cells.forEach(otherCell => {
+          if (otherCell.id !== this.id && !otherCell.isDying) {
+            const dx = this.x - otherCell.x;
+            const dy = this.y - otherCell.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < CELL_RADIUS * 2.2 && dist > 0) {
+              const force = 0.03 / (dist + 0.1);
+              this.vx += (dx / dist) * force;
+              this.vy += (dy / dist) * force;
+            }
+          }
+        });
+      }
+
+      // Realistic cell division
+      divide() {
+        if (!this.canDivide || this.isDividing || this.divisionCooldown > 0 || divisionsLeft <= 0) {
+          return null;
+        }
+        
+        this.isDividing = true;
+        this.divisionCooldown = 15; // Prevent immediate re-division
+        
+        // Create daughter cell
+        const angle = Math.random() * 2 * Math.PI;
+        const separationDist = CELL_RADIUS * 2.5;
+        
+        const daughterCell = new Cell(
+          this.x + Math.cos(angle) * separationDist,
+          this.y + Math.sin(angle) * separationDist,
+          0, // New cell starts at age 0
+          this.generation + 1
+        );
+        
+        // Both cells get pushed apart during division
+        const pushForce = 1.2;
+        this.vx -= Math.cos(angle) * pushForce;
+        this.vy -= Math.sin(angle) * pushForce;
+        daughterCell.vx += Math.cos(angle) * pushForce;
+        daughterCell.vy += Math.sin(angle) * pushForce;
+        
+        // Mark both as dividing for animation
+        daughterCell.isDividing = true;
+        
+        // Stop division animation after 2 seconds
+        setTimeout(() => {
+          this.isDividing = false;
+          if (daughterCell) daughterCell.isDividing = false;
+        }, 2000);
+        
+        divisionsLeft--;
+        generation = Math.max(generation, daughterCell.generation);
+        
+        return daughterCell;
+      }
+
+      isInsideCage() {
+        const dist = Math.sqrt((this.x - CAGE_CENTER.x) ** 2 + (this.y - CAGE_CENTER.y) ** 2);
+        return dist <= (CAGE_RADIUS - CELL_RADIUS);
+      }
+    }
+
+    function initializeSimulation() {
+      cells = [];
+      // Start with ONLY ONE red cell
+      cells.push(new Cell(300, 200, 0, 1));
+      
+      divisionsLeft = 25;
+      generation = 1;
+      tickCount = 0;
+      
+      // Hide other stem cells initially
+      document.getElementById('stem-green').style.display = 'none';
+      document.getElementById('stem-yellow').style.display = 'none';
+    }
+
+    function drawCells() {
+      // Remove old cell elements
+      svg.querySelectorAll(".cell").forEach(cell => svg.removeChild(cell));
+
+      // Draw only red cells
+      cells.forEach(cell => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cell.x);
+        circle.setAttribute("cy", cell.y);
+        circle.setAttribute("r", CELL_RADIUS);
+        
+        let classes = 'cell red-clone';
+        if (cell.isDying) classes += ' dying-cell';
+        if (cell.isDividing) classes += ' dividing';
+        
+        circle.setAttribute("class", classes);
+        circle.setAttribute("data-id", cell.id);
+        svg.appendChild(circle);
+      });
+    }
+
+    function divideCells() {
+      if (divisionsLeft <= 0) return;
+      
+      const newCells = [];
+      const healthyCells = cells.filter(c => !c.isDying && !c.isDividing);
+      
+      healthyCells.forEach(cell => {
+        // Division probability based on age and population pressure
+        const populationPressure = cells.length / MAX_POPULATION;
+        const ageFactor = 1 - (cell.age / cell.maxAge);
+        const divisionChance = 0.15 * ageFactor * (1 - populationPressure);
+        
+        if (Math.random() < divisionChance && cells.length < MAX_POPULATION) {
+          const daughterCell = cell.divide();
+          if (daughterCell && daughterCell.isInsideCage()) {
+            newCells.push(daughterCell);
+          }
+        }
+      });
+
+      cells.push(...newCells);
+    }
+
+    function updateCells() {
+      // Update all cells
+      cells.forEach(cell => cell.update());
+      
+      // Remove dying cells
+      cells = cells.filter(cell => !cell.isDying);
+    }
+
+    function updateStats() {
+      document.getElementById('total-count').textContent = cells.length;
+      document.getElementById('divisions-left').textContent = divisionsLeft;
+      document.getElementById('generation').textContent = generation;
+    }
+
+    function saveState() {
+      stateHistory.push({
+        tick: tickCount,
+        cellCount: cells.length,
+        divisionsLeft: divisionsLeft,
+        generation: generation
+      });
+      
+      if (stateHistory.length > 100) {
+        stateHistory.shift();
+      }
+    }
+
+    function tick() {
+      if (!simulationRunning) return;
+      
+      divideCells();
+      updateCells();
+      drawCells();
+      updateStats();
+      saveState();
+      
+      tickCount++;
+    }
+
+    function toggleSimulation() {
+      simulationRunning = !simulationRunning;
+    }
+
+    function resetSimulation() {
+      initializeSimulation();
+      drawCells();
+      updateStats();
+    }
+
+    function updateSpeed() {
+      simulationSpeed = parseFloat(document.getElementById('speedControl').value);
+    }
+
+    function exportState() {
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        finalState: {
+          cellCount: cells.length,
+          divisionsLeft: divisionsLeft,
+          generation: generation,
+          tickCount: tickCount
+        },
+        history: stateHistory
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `red-clone-simulation-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize and start simulation
+    initializeSimulation();
+    drawCells();
+    updateStats();
+    
+    // Smooth animation loop
+    setInterval(() => {
+      tick();
+    }, 300 / simulationSpeed);
+  </script>
+</body>
+</html>

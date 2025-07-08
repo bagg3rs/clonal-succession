@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clonal Succession in Tumours - Interactive Simulation</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      max-width: 800px;
+    }
+    
+    h1 {
+      color: #ff4444;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    
+    .subtitle {
+      color: #aaa;
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    
+    .description {
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .demo-links {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    
+    .demo-link {
+      background: #333;
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      border: 1px solid #555;
+      transition: background 0.3s;
+    }
+    
+    .demo-link:hover {
+      background: #444;
+    }
+    
+    .demo-link.primary {
+      background: #ff4444;
+      border-color: #ff6666;
+    }
+    
+    .demo-link.primary:hover {
+      background: #ff6666;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      max-width: 800px;
+      margin-top: 40px;
+    }
+    
+    .feature {
+      background: #222;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    
+    .feature h3 {
+      color: #00e676;
+      margin-top: 0;
+    }
+    
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      color: #666;
+      font-size: 0.9em;
+    }
+    
+    .footer a {
+      color: #00e676;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Clonal Succession in Tumours</h1>
+    <div class="subtitle">Interactive Physics-Based Simulation</div>
+    <div class="description">
+      This simulation demonstrates how tumours maintain their populations through clonal succession - 
+      a mechanism where different stem cell clones take turns being active, ensuring tumour survival 
+      despite individual cell populations having limited lifespans.
+    </div>
+  </div>
+
+  <div class="simulation-container">
+    <div class="demo-links">
+      <a href="animations/clonal-succession-cycle.html" class="demo-link primary">
+        🔬 Full Clonal Succession Simulation
+      </a>
+      <a href="animations/max-cells-control-simulation.html" class="demo-link">
+        🎛️ Population Control Demo
+      </a>
+      <a href="animations/tight-packed-simulation.html" class="demo-link">
+        📦 Pressure-Based Growth
+      </a>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <h3>🔄 Clonal Succession</h3>
+      <p>Watch as red, green, and yellow stem cell clones take turns being active, creating a continuous cycle that maintains tumour population.</p>
+    </div>
+    
+    <div class="feature">
+      <h3>⚖️ Population Homeostasis</h3>
+      <p>Total cell count remains constant (~100 cells) while clonal composition changes dramatically over time through replacement, not addition.</p>
+    </div>
+    
+    <div class="feature">
+      <h3>🧬 Realistic Physics</h3>
+      <p>Cells exhibit natural movement, division, and death using Matter.js physics engine for authentic biological behavior.</p>
+    </div>
+    
+    <div class="feature">
+      <h3>📈 Pressure-Driven Expansion</h3>
+      <p>The cage expands dynamically based on actual cell pressure, simulating how tissues grow in response to internal forces.</p>
+    </div>
+    
+    <div class="feature">
+      <h3>🎮 Interactive Controls</h3>
+      <p>Adjust simulation speed, maximum cell population, and observe real-time statistics including pressure levels and clone composition.</p>
+    </div>
+    
+    <div class="feature">
+      <h3>📊 Research Applications</h3>
+      <p>Based on mathematical models of tumour biology, this simulation provides insights into cancer persistence and potential therapeutic targets.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>
+      Open source research simulation • 
+      <a href="https://github.com/baggers/clonal-succession">View on GitHub</a> • 
+      Licensed under MIT
+    </p>
+    <p>
+      Built with Matter.js physics engine and HTML5 Canvas
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clonal Succession - Clean Division</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    svg {
+      background: #222;
+      border: 1px solid #555;
+      border-radius: 10px;
+    }
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .stats {
+      margin-top: 20px;
+      display: flex;
+      gap: 30px;
+      font-size: 14px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff4444;
+    }
+    
+    .red-clone { 
+      fill: #ff4444; 
+      stroke: #ff6666;
+      stroke-width: 1;
+    }
+    
+    .cage {
+      fill: none;
+      stroke: #00e676;
+      stroke-width: 3;
+    }
+    .stem-cell {
+      stroke: white;
+      stroke-width: 3;
+      filter: drop-shadow(0 0 10px #ff4444);
+      animation: pulse 3s infinite ease-in-out;
+    }
+    
+    .dividing {
+      animation: cleanDivision 1s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    @keyframes cleanDivision {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    button {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
+    <button onclick="resetSimulation()">🔄 Reset</button>
+    <label>Speed: <input type="range" id="speedControl" min="0.5" max="3" step="0.1" value="1" onchange="updateSpeed()"></label>
+  </div>
+
+  <svg id="sim" width="600" height="600" viewBox="0 0 600 600">
+    <!-- Round cage -->
+    <circle class="cage" cx="300" cy="300" r="200" />
+    
+    <!-- Red stem cell -->
+    <circle id="stem-red" class="stem-cell red-clone" cx="300" cy="150" r="12" />
+  </svg>
+
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-value" id="total-count">1</div>
+      <div>Red Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="divisions-left">25</div>
+      <div>Divisions Left</div>
+    </div>
+  </div>
+
+  <script>
+    const svg = document.getElementById("sim");
+    const CAGE_CENTER = { x: 300, y: 300 };
+    const CAGE_RADIUS = 200;
+    const CELL_RADIUS = 8;
+    
+    let cells = [];
+    let divisionsLeft = 25;
+    let simulationRunning = true;
+    let simulationSpeed = 1;
+
+    // Very simple cell - no movement at all
+    class Cell {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.id = Math.random().toString(36).substr(2, 9);
+        this.isDividing = false;
+        this.canDivide = true;
+        this.divisionTimer = 0;
+      }
+
+      update() {
+        // No movement - cells stay exactly where they are
+        if (this.divisionTimer > 0) {
+          this.divisionTimer--;
+          if (this.divisionTimer === 0) {
+            this.canDivide = true;
+          }
+        }
+      }
+
+      divide() {
+        if (!this.canDivide || divisionsLeft <= 0) return null;
+        
+        // Find a spot right next to this cell
+        const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2, Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
+        const distance = CELL_RADIUS * 2.1;
+        
+        for (let angle of angles) {
+          const newX = this.x + Math.cos(angle) * distance;
+          const newY = this.y + Math.sin(angle) * distance;
+          
+          // Check if this spot is free and inside cage
+          const distFromCenter = Math.sqrt((newX - CAGE_CENTER.x) ** 2 + (newY - CAGE_CENTER.y) ** 2);
+          if (distFromCenter <= CAGE_RADIUS - CELL_RADIUS) {
+            // Check if spot is free from other cells
+            const tooClose = cells.some(cell => {
+              const dist = Math.sqrt((cell.x - newX) ** 2 + (cell.y - newY) ** 2);
+              return dist < CELL_RADIUS * 2;
+            });
+            
+            if (!tooClose) {
+              // Create new cell here
+              const newCell = new Cell(newX, newY);
+              
+              // Animation
+              this.isDividing = true;
+              newCell.isDividing = true;
+              
+              setTimeout(() => {
+                this.isDividing = false;
+                newCell.isDividing = false;
+              }, 1000);
+              
+              // Prevent immediate re-division
+              this.canDivide = false;
+              this.divisionTimer = 10;
+              newCell.canDivide = false;
+              newCell.divisionTimer = 5;
+              
+              divisionsLeft--;
+              return newCell;
+            }
+          }
+        }
+        return null; // No space found
+      }
+    }
+
+    function initializeSimulation() {
+      cells = [];
+      // Start with exactly ONE cell in the center
+      cells.push(new Cell(300, 300));
+      divisionsLeft = 25;
+    }
+
+    function drawCells() {
+      // Remove old cells
+      svg.querySelectorAll(".cell").forEach(cell => svg.removeChild(cell));
+
+      // Draw all cells
+      cells.forEach(cell => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cell.x);
+        circle.setAttribute("cy", cell.y);
+        circle.setAttribute("r", CELL_RADIUS);
+        
+        let classes = 'cell red-clone';
+        if (cell.isDividing) classes += ' dividing';
+        
+        circle.setAttribute("class", classes);
+        svg.appendChild(circle);
+      });
+    }
+
+    function divideCells() {
+      if (divisionsLeft <= 0) return;
+      
+      const newCells = [];
+      
+      // Try to divide some cells
+      cells.forEach(cell => {
+        if (Math.random() < 0.3 && cell.canDivide) { // 30% chance
+          const newCell = cell.divide();
+          if (newCell) {
+            newCells.push(newCell);
+          }
+        }
+      });
+
+      cells.push(...newCells);
+    }
+
+    function updateCells() {
+      cells.forEach(cell => cell.update());
+    }
+
+    function updateStats() {
+      document.getElementById('total-count').textContent = cells.length;
+      document.getElementById('divisions-left').textContent = divisionsLeft;
+    }
+
+    function tick() {
+      if (!simulationRunning) return;
+      
+      divideCells();
+      updateCells();
+      drawCells();
+      updateStats();
+    }
+
+    function toggleSimulation() {
+      simulationRunning = !simulationRunning;
+    }
+
+    function resetSimulation() {
+      initializeSimulation();
+      drawCells();
+      updateStats();
+    }
+
+    function updateSpeed() {
+      simulationSpeed = parseFloat(document.getElementById('speedControl').value);
+    }
+
+    // Initialize
+    initializeSimulation();
+    drawCells();
+    updateStats();
+    
+    // Run simulation
+    setInterval(() => {
+      tick();
+    }, 1500 / simulationSpeed);
+  </script>
+</body>
+</html>
