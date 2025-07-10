@@ -94,9 +94,9 @@ Clonal succession is the process by which tumors maintain their cell populations
 
 ## 🚀 Live Demo
 
-**[View Interactive Simulation](https://baggers.github.io/clonal-succession/)**
+**[View Interactive Simulation](https://bagg3rs.github.io/clonal-succession/)**
 
-Try the simulation directly in your browser with full interactive controls.
+Try the simulation directly in your browser with full interactive controls. The main animation (clonal-succession-cycle.html) demonstrates the complete clonal succession process.
 
 ## Repository Structure
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Red-White Cell Cycle Simulation</title>
+  <title>Clonal Succession in Tumours - Main Simulation</title>
   <style>
     body {
       background: #111;
@@ -84,8 +84,8 @@
     
     <div class="control-group">
       <label>Speed: 
-        <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="0.1" onchange="updateSpeed()">
-        <span id="speedValue">0.1</span>
+        <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="1" onchange="updateSpeed()">
+        <span id="speedValue">1.0</span>
       </label>
     </div>
     
@@ -97,17 +97,10 @@
     </div>
     
     <div class="control-group">
-      <label>Senescence Rate: 
-        <input type="range" id="senescenceControl" min="0.5" max="5" step="0.5" value="3" onchange="updateSenescenceRate()">
-        <span id="senescenceValue">3.0</span>
-      </label>
-    </div>
-    
-    <div class="control-group">
       <label>Stage: 
         <select id="stageControl" onchange="updateStage()">
           <option value="1">Stage 1 (Three stages)</option>
-          <option value="2" selected>Stage 2 (Two populations)</option>
+          <option value="2">Stage 2 (Two populations)</option>
         </select>
       </label>
     </div>
@@ -174,10 +167,9 @@
     let constraints = [];
     let boundaries = [];
     let simulationRunning = true;
-    let simulationSpeed = 0.1;
+    let simulationSpeed = 1;
     let frameCount = 0;
     let targetCageRadius = CAGE_RADIUS;
-    let senescenceRate = 3.0;
     
     // CLONAL SUCCESSION STATE
     let activeClone = 'red';
@@ -190,7 +182,7 @@
     let whiteCellSignalThreshold = 10; // Number of dying white cells needed to trigger new stem cell activation
     
     // Simulation stage (1 = three stages, 2 = two populations)
-    let simulationStage = 2;
+    let simulationStage = 1;
 
     // Create cage boundary
     function createCageBoundary(radius) {
@@ -274,10 +266,6 @@
           activeClone = 'red';
         }
         stemCells[activeClone].active = true;
-      } else {
-        // For stage 1, always use red cells but reset their state
-        activeClone = 'red';
-        stemCells[activeClone].active = true;
       }
       
       // Add initial cells for new cycle
@@ -294,12 +282,16 @@
         const x = CAGE_CENTER.x + Math.cos(angle) * distance;
         const y = CAGE_CENTER.y + Math.sin(angle) * distance;
         
+        // In stage 2, alternate between population 1 and 2
+        let population = 1;
         if (simulationStage === 2) {
-          // In stage 2, use the active clone (red or green)
-          const newCell = new Cell(x, y, activeClone, activeClone === 'red' ? 1 : 2);
+          // Randomly choose population 1 or 2
+          population = Math.random() < 0.5 ? 1 : 2;
+          const clone = population === 1 ? 'red' : 'green';
+          const newCell = new Cell(x, y, clone, population);
           cells.push(newCell);
         } else {
-          // Stage 1: Just red cells with three states
+          // Stage 1: Just red cells
           const newCell = new Cell(x, y, 'red', 1);
           cells.push(newCell);
         }
@@ -455,7 +447,7 @@
         // State transitions based on age and conditions
         if (this.state === 'dividing') {
           // Check if cell should transition to non-dividing state
-          if (this.age > this.maxAge * 0.3) {
+          if (this.age > this.maxAge * 0.4) {
             this.state = 'non-dividing';
             this.canDivide = false;
             // Update the cell's appearance
@@ -463,7 +455,7 @@
           }
         } else if (this.state === 'non-dividing') {
           // Check if cell should transition to senescent state
-          if (this.age > this.maxAge * 0.6) {
+          if (this.age > this.maxAge * 0.7) {
             this.state = 'senescent';
             // Update the cell's appearance
             this.body.render.fillStyle = this.getColor();
@@ -472,12 +464,12 @@
         
         // Senescent cells age faster and die
         if (this.state === 'senescent') {
-          this.age += senescenceRate; // Age faster based on senescence rate
+          this.age += 3; // Age 4x faster (1 normal + 3 extra)
           
           // Track dying white cells for signaling
           if (this.age > this.maxAge * 0.9) {
             // Only count once when the cell enters the dying phase
-            if (Math.floor(this.age - senescenceRate) <= this.maxAge * 0.9) {
+            if (Math.floor(this.age - 4) <= this.maxAge * 0.9) {
               dyingWhiteCellCount++;
             }
           }
@@ -685,14 +677,7 @@
       createCageBoundary(CAGE_RADIUS);
       
       // Reset clonal succession state
-      if (simulationStage === 2) {
-        // For stage 2, start with red population
-        activeClone = 'red';
-      } else {
-        // For stage 1, always red
-        activeClone = 'red';
-      }
-      
+      activeClone = 'red';
       stemCells = {
         red: { divisionsLeft: 25, active: true },
         green: { divisionsLeft: 25, active: false }
@@ -700,8 +685,8 @@
       successionTimer = 0;
       dyingWhiteCellCount = 0;
       
-      // Start with one cell of the active clone
-      const initialCell = new Cell(CAGE_CENTER.x, CAGE_CENTER.y, activeClone, activeClone === 'red' ? 1 : 2);
+      // Start with one red cell
+      const initialCell = new Cell(CAGE_CENTER.x, CAGE_CENTER.y, 'red', 1);
       cells.push(initialCell);
       
       frameCount = 0;
@@ -906,11 +891,6 @@
       document.getElementById('maxCellsValue').textContent = MAX_CELLS;
     }
     
-    function updateSenescenceRate() {
-      senescenceRate = parseFloat(document.getElementById('senescenceControl').value);
-      document.getElementById('senescenceValue').textContent = senescenceRate.toFixed(1);
-    }
-    
     function updateStage() {
       simulationStage = parseInt(document.getElementById('stageControl').value);
       
@@ -934,7 +914,6 @@
     // Initialize controls
     updateSpeed();
     updateMaxCells();
-    updateSenescenceRate();
     document.getElementById('stageControl').value = simulationStage.toString();
     
     initializeSimulation();
