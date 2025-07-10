@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animation References - Clonal Succession in Tumours</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      max-width: 800px;
+    }
+    
+    h1 {
+      color: #ff4444;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    
+    .subtitle {
+      color: #aaa;
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    
+    .description {
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    
+    .home-link {
+      margin-bottom: 30px;
+      background: #ff4444;
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      border: 1px solid #ff6666;
+      transition: background 0.3s;
+      display: inline-block;
+    }
+    
+    .home-link:hover {
+      background: #ff6666;
+    }
+    
+    .animations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 1200px;
+      width: 100%;
+    }
+    
+    .animation-card {
+      background: #222;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #333;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .animation-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .animation-preview {
+      width: 100%;
+      height: 200px;
+      background: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    
+    .animation-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .animation-preview .placeholder {
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .animation-info {
+      padding: 20px;
+    }
+    
+    .animation-info h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #00e676;
+    }
+    
+    .animation-info p {
+      color: #ccc;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+    
+    .animation-link {
+      display: inline-block;
+      background: #333;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    .animation-link:hover {
+      background: #444;
+    }
+    
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      color: #666;
+      font-size: 0.9em;
+    }
+    
+    .footer a {
+      color: #00e676;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .section-title {
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 20px;
+      color: #aaa;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Animation References</h1>
+    <div class="subtitle">Clonal Succession in Tumours</div>
+    <div class="description">
+      Browse our collection of interactive simulations demonstrating various aspects of clonal succession in tumours.
+      Each animation highlights different biological mechanisms and simulation parameters.
+    </div>
+  </div>
+  
+  <a href="index.html" class="home-link">
+    ← Back to Main Simulation
+  </a>
+  
+  <h2 class="section-title">Primary Simulations</h2>
+  
+  <div class="animations-grid">
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Red-White Cell Cycle]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>🩹 Red-White Cell Cycle</h3>
+        <p>
+          Demonstrates how red cells expand until they fill the vascular cage, then turn white and die, 
+          sending signals for new red stem cells to start dividing.
+        </p>
+        <a href="animations/red-white-cycle.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+    
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Full Clonal Succession]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>🔬 Full Clonal Succession</h3>
+        <p>
+          Watch as red, green, and yellow stem cell clones take turns being active, creating a continuous 
+          cycle that maintains tumour population.
+        </p>
+        <a href="animations/clonal-succession-cycle.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+    
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Population Control]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>🎛️ Population Control</h3>
+        <p>
+          Explore how tumours maintain a constant cell population through balanced division and death rates,
+          even as individual clones rise and fall.
+        </p>
+        <a href="animations/max-cells-control-simulation.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+  </div>
+  
+  <h2 class="section-title">Physics & Growth Simulations</h2>
+  
+  <div class="animations-grid">
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Pressure-Based Growth]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>📦 Pressure-Based Growth</h3>
+        <p>
+          See how the cage expands dynamically based on actual cell pressure, simulating how tissues 
+          grow in response to internal forces.
+        </p>
+        <a href="animations/tight-packed-simulation.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+    
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Realistic Division]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>🧬 Realistic Division</h3>
+        <p>
+          Observe how cells divide realistically with physical constraints, pushing neighboring cells 
+          and adapting to available space.
+        </p>
+        <a href="animations/realistic-division.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+    
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Natural Movement]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>🌊 Natural Movement</h3>
+        <p>
+          Cells exhibit natural movement patterns with gentle cohesion forces and realistic physical interactions.
+        </p>
+        <a href="animations/natural-movement-simulation.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+  </div>
+  
+  <h2 class="section-title">Experimental Simulations</h2>
+  
+  <div class="animations-grid">
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Unlimited Division]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>♾️ Unlimited Division</h3>
+        <p>
+          What happens when cells can divide without limits? This simulation removes division constraints 
+          to demonstrate uncontrolled growth.
+        </p>
+        <a href="animations/unlimited-division-simulation.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+    
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Fluid Simulation]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>💧 Fluid Simulation</h3>
+        <p>
+          Cells behave more like fluid particles in this simulation, with reduced friction and increased mobility.
+        </p>
+        <a href="animations/fluid-simulation.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+    
+    <div class="animation-card">
+      <div class="animation-preview">
+        <div class="placeholder">
+          [GIF Preview: Ultra-Tight Simulation]
+        </div>
+      </div>
+      <div class="animation-info">
+        <h3>🔍 Ultra-Tight Simulation</h3>
+        <p>
+          Cells are packed extremely tightly in this simulation, demonstrating the effects of high pressure 
+          on cell behavior and division.
+        </p>
+        <a href="animations/ultra-tight-simulation.html" class="animation-link">View Simulation</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>
+      Open source research simulation • 
+      <a href="https://github.com/baggers/clonal-succession">View on GitHub</a> • 
+      Licensed under MIT
+    </p>
+    <p>
+      Built with Matter.js physics engine and HTML5 Canvas
+    </p>
+  </div>
+</body>
+</html>
