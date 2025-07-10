@@ -133,10 +133,7 @@
       <div class="stat-value cage-stat" id="cage-radius">14</div>
       <div>Cage Radius</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-value" id="pressure">High</div>
-      <div>Cell Pressure</div>
-    </div>
+
     <div class="stat-item">
       <div class="stat-value max-cells-stat" id="max-cells-display">100</div>
       <div>Max Cells</div>
@@ -301,9 +298,9 @@
       }
     }
 
-    // Pressure calculation
-    function updateCagePressure() {
-      if (cells.length === 0) return { pressure: 0, pressureLevel: "None" };
+    // Cage expansion logic
+    function updateCageExpansion() {
+      if (cells.length === 0) return { boundaryPressure: 0, cellCrowding: 0 };
       
       let boundaryPressure = 0;
       let cellCrowding = 0;
@@ -367,18 +364,7 @@
         createCageBoundary(CAGE_RADIUS);
       }
       
-      let pressureLevel = "None";
-      if (pressure > 8) pressureLevel = "Extreme";
-      else if (pressure > 6) pressureLevel = "Very High";
-      else if (pressure > 4) pressureLevel = "High";
-      else if (pressure > 2) pressureLevel = "Medium";
-      else if (pressure > 0.5) pressureLevel = "Low";
-      
-      if (cells.length >= MAX_CELLS) {
-        pressureLevel = "Max Reached";
-      }
-      
-      return { pressure, pressureLevel, boundaryPressure, cellCrowding };
+      return { boundaryPressure, cellCrowding };
     }
 
     // Cell class with clone support
@@ -818,7 +804,7 @@
     }
 
     function updateStats() {
-      const pressureData = updateCagePressure();
+      const expansionData = updateCageExpansion();
       
       // Count cells by type and state
       const counts = {
@@ -868,7 +854,6 @@
       document.getElementById('total-count').textContent = cells.length;
       document.getElementById('active-clone').textContent = activeClone.charAt(0).toUpperCase() + activeClone.slice(1);
       document.getElementById('cage-radius').textContent = Math.round(CAGE_RADIUS);
-      document.getElementById('pressure').textContent = pressureData.pressureLevel;
       document.getElementById('max-cells-display').textContent = MAX_CELLS;
     }
 
