@@ -81,10 +81,7 @@
       <div class="stat-value cage-stat" id="cage-radius">14</div>
       <div>Cage Radius</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-value" id="pressure">High</div>
-      <div>Cell Pressure</div>
-    </div>
+
   </div>
 
   <!-- Matter.js CDN -->
@@ -160,8 +157,8 @@
     }
 
     // MUCH TIGHTER expansion - less space around cells
-    function updateCagePressure() {
-      if (cells.length === 0) return { pressure: 0, pressureLevel: "None" };
+    function updateCageExpansion() {
+      if (cells.length === 0) return;
       
       let boundaryPressure = 0;
       let cellCrowding = 0;
@@ -238,15 +235,6 @@
         CAGE_RADIUS -= 0.3;
         createCageBoundary(CAGE_RADIUS);
       }
-      
-      let pressureLevel = "None";
-      if (pressure > 8) pressureLevel = "Extreme";
-      else if (pressure > 6) pressureLevel = "Very High";
-      else if (pressure > 4) pressureLevel = "High";
-      else if (pressure > 2) pressureLevel = "Medium";
-      else if (pressure > 0.5) pressureLevel = "Low";
-      
-      return { pressure, pressureLevel, boundaryPressure, cellCrowding };
     }
 
     // Cell class with gentle forces
@@ -544,12 +532,11 @@
     }
 
     function updateStats() {
-      const pressureData = updateCagePressure();
+      updateCageExpansion();
       
       document.getElementById('total-count').textContent = cells.length;
       document.getElementById('divisions-left').textContent = divisionsLeft;
       document.getElementById('cage-radius').textContent = Math.round(CAGE_RADIUS);
-      document.getElementById('pressure').textContent = pressureData.pressureLevel;
     }
 
     function gameLoop() {
