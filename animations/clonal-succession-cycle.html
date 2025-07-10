@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Clonal Succession - Full Cycle</title>
+  <title>Red-White Cell Cycle Simulation</title>
   <style>
     body {
       background: #111;
@@ -105,12 +105,12 @@
       <div>Red Cells</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value green-stat" id="green-count">0</div>
-      <div>Green Cells</div>
+      <div class="stat-value" id="green-count" style="color: #ffffff;">0</div>
+      <div>White Cells</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value yellow-stat" id="yellow-count">0</div>
-      <div>Yellow Cells</div>
+      <div class="stat-value" id="yellow-count" style="color: #ffaa00;">0</div>
+      <div>Dying Signals</div>
     </div>
     <div class="stat-item">
       <div class="stat-value" id="total-count">1</div>
@@ -167,13 +167,12 @@
     
     // CLONAL SUCCESSION STATE
     let activeClone = 'red';
-    let cloneOrder = ['red', 'green', 'yellow'];
     let stemCells = {
-      red: { divisionsLeft: 25, active: true },
-      green: { divisionsLeft: 25, active: false },
-      yellow: { divisionsLeft: 25, active: false }
+      red: { divisionsLeft: 25, active: true }
     };
     let successionTimer = 0;
+    let dyingWhiteCellCount = 0;
+    let whiteCellSignalThreshold = 10; // Number of dying white cells needed to trigger new stem cell activation
 
     // Create cage boundary
     function createCageBoundary(radius) {
@@ -216,54 +215,45 @@
 
     // Check for clonal succession
     function checkClonalSuccession() {
-      const activeCells = cells.filter(c => c.clone === activeClone);
+      // Count senescent (white) cells
+      const senescentCells = cells.filter(c => c.senescent);
       const totalCells = cells.length;
       
-      // Trigger succession if:
-      // 1. Active stem cell is exhausted (no divisions left)
-      // 2. Active clone population is declining (less than 30% of total)
-      // 3. Total population is dropping below 70% of max
-      const stemExhausted = stemCells[activeClone].divisionsLeft <= 0;
-      const cloneDecline = activeCells.length < totalCells * 0.3;
-      const populationDrop = totalCells < MAX_CELLS * 0.7;
+      // Check if we have enough dying white cells to trigger a new cycle
+      if (dyingWhiteCellCount >= whiteCellSignalThreshold) {
+        console.log(`White cell death signal threshold reached: ${dyingWhiteCellCount}/${whiteCellSignalThreshold}`);
+        triggerNewCycle();
+      }
       
-      if (stemExhausted || (cloneDecline && populationDrop)) {
+      // If all cells are senescent and the population is declining, prepare for a new cycle
+      if (senescentCells.length > totalCells * 0.8 && totalCells < MAX_CELLS * 0.7) {
         successionTimer++;
         
         // Wait a bit before succession to show decline
         if (successionTimer > 60) { // 1 second at 60fps
-          triggerSuccession();
+          triggerNewCycle();
         }
       } else {
         successionTimer = 0;
       }
     }
     
-    function triggerSuccession() {
-      // Find next clone in cycle
-      const currentIndex = cloneOrder.indexOf(activeClone);
-      const nextIndex = (currentIndex + 1) % cloneOrder.length;
-      const nextClone = cloneOrder[nextIndex];
+    function triggerNewCycle() {
+      console.log("Triggering new red cell cycle");
       
-      // Only succeed if next clone has divisions left
-      if (stemCells[nextClone].divisionsLeft > 0) {
-        console.log(`Clonal succession: ${activeClone} → ${nextClone}`);
-        
-        // Deactivate current clone
-        stemCells[activeClone].active = false;
-        
-        // Activate next clone
-        activeClone = nextClone;
-        stemCells[activeClone].active = true;
-        
-        // Add initial cells for new clone
-        addInitialCloneCells(activeClone);
-        
-        successionTimer = 0;
-      }
+      // Reset the stem cell divisions
+      stemCells[activeClone].divisionsLeft = 25;
+      
+      // Reset the dying white cell counter
+      dyingWhiteCellCount = 0;
+      
+      // Add initial cells for new cycle
+      addInitialRedCells();
+      
+      successionTimer = 0;
     }
     
-    function addInitialCloneCells(clone) {
+    function addInitialRedCells() {
       // Add 2-3 cells of the new clone near center
       for (let i = 0; i < 3; i++) {
         const angle = (Math.PI * 2 * i) / 3;
@@ -271,7 +261,7 @@
         const x = CAGE_CENTER.x + Math.cos(angle) * distance;
         const y = CAGE_CENTER.y + Math.sin(angle) * distance;
         
-        const newCell = new Cell(x, y, clone);
+        const newCell = new Cell(x, y, 'red');
         cells.push(newCell);
       }
     }
@@ -366,6 +356,7 @@
         this.divisionCooldown = 0;
         this.isDividing = false;
         this.isNewborn = true;
+        this.senescent = false; // New property for cells that can't divide due to space constraints
         this.id = Math.random().toString(36).substr(2, 9);
         
         // Ensure safe initial position
@@ -392,10 +383,12 @@
       }
       
       getColor() {
+        if (this.senescent) {
+          return '#ffffff'; // White for senescent cells
+        }
+        
         switch(this.clone) {
           case 'red': return '#ff4444';
-          case 'green': return '#44ff44';
-          case 'yellow': return '#ffff44';
           default: return '#ff4444';
         }
       }
@@ -410,9 +403,17 @@
           }
         }
         
-        // Cells of inactive clones age faster and die
-        if (this.clone !== activeClone) {
-          this.age += 2; // Age faster when not active clone
+        // Senescent cells age faster and die
+        if (this.senescent) {
+          this.age += 3; // Age 4x faster (1 normal + 3 extra)
+          
+          // Track dying white cells for signaling
+          if (this.age > this.maxAge * 0.9) {
+            // Only count once when the cell enters the dying phase
+            if (Math.floor(this.age - 4) <= this.maxAge * 0.9) {
+              dyingWhiteCellCount++;
+            }
+          }
         }
         
         if (this.age > this.maxAge) {
@@ -423,6 +424,25 @@
         this.gentleContainment();
         this.gentleCohesion();
         this.dampenMovement();
+        
+        // Check if cell is near the boundary and should become senescent
+        this.checkSenescence();
+      }
+      
+      checkSenescence() {
+        if (this.senescent) return; // Already senescent
+        
+        const pos = this.body.position;
+        const distFromCenter = Vector.magnitude(Vector.sub(pos, CAGE_CENTER));
+        
+        // If cell is near the boundary and the cage is not expanding much
+        if (distFromCenter > CAGE_RADIUS - CELL_RADIUS - 5 && 
+            Math.abs(CAGE_RADIUS - targetCageRadius) < 2 &&
+            cells.length >= MAX_CELLS * 0.9) {
+          this.senescent = true;
+          // Update the cell's appearance
+          this.body.render.fillStyle = this.getColor();
+        }
       }
       
       gentleContainment() {
@@ -488,10 +508,26 @@
       }
 
       divide() {
+        // Senescent cells cannot divide
+        if (this.senescent) {
+          return null;
+        }
+        
         // Only active clone can divide, and only if stem cell has divisions left
         if (!this.canDivide || this.divisionCooldown > 0 || 
-            cells.length >= MAX_CELLS || this.clone !== activeClone ||
+            cells.length >= MAX_CELLS || 
             stemCells[activeClone].divisionsLeft <= 0) {
+          return null;
+        }
+        
+        // Check if cell is near the boundary and should become senescent instead of dividing
+        const pos = this.body.position;
+        const distFromCenter = Vector.magnitude(Vector.sub(pos, CAGE_CENTER));
+        if (distFromCenter > CAGE_RADIUS - CELL_RADIUS - 5 && 
+            Math.abs(CAGE_RADIUS - targetCageRadius) < 2 &&
+            cells.length >= MAX_CELLS * 0.9) {
+          this.senescent = true;
+          this.body.render.fillStyle = this.getColor();
           return null;
         }
         
@@ -554,6 +590,11 @@
       }
       
       destroy() {
+        // If this is a senescent cell dying, it might trigger a signal
+        if (this.senescent && this.age > this.maxAge * 0.9) {
+          // Signal is already tracked in the update method
+        }
+        
         World.remove(world, this.body);
         const index = cells.indexOf(this);
         if (index > -1) {
@@ -576,11 +617,10 @@
       // Reset clonal succession state
       activeClone = 'red';
       stemCells = {
-        red: { divisionsLeft: 25, active: true },
-        green: { divisionsLeft: 25, active: false },
-        yellow: { divisionsLeft: 25, active: false }
+        red: { divisionsLeft: 25, active: true }
       };
       successionTimer = 0;
+      dyingWhiteCellCount = 0;
       
       // Start with one red cell
       const initialCell = new Cell(CAGE_CENTER.x, CAGE_CENTER.y, 'red');
@@ -626,8 +666,15 @@
         if (cell.age > cell.maxAge * 0.8) {
           const fadeRatio = (cell.age - cell.maxAge * 0.8) / (cell.maxAge * 0.2);
           const alpha = 1 - fadeRatio * 0.7;
-          fillStyle = fillStyle.replace(')', `, ${alpha})`).replace('#', 'rgba(').replace(/(.{2})(.{2})(.{2})/, (m, r, g, b) => 
-            `${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}`);
+          
+          // For white (senescent) cells, keep them white but fade them
+          if (cell.senescent) {
+            fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          } else {
+            // For red cells
+            fillStyle = fillStyle.replace(')', `, ${alpha})`).replace('#', 'rgba(').replace(/(.{2})(.{2})(.{2})/, (m, r, g, b) => 
+              `${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}`);
+          }
         }
         
         const distFromCenter = Vector.magnitude(Vector.sub(pos, CAGE_CENTER));
@@ -696,17 +743,21 @@
     function updateStats() {
       const pressureData = updateCagePressure();
       
-      // Count cells by clone
-      const counts = { red: 0, green: 0, yellow: 0 };
+      // Count cells by type
+      const counts = { red: 0, white: 0 };
       cells.forEach(cell => {
-        counts[cell.clone]++;
+        if (cell.senescent) {
+          counts.white++;
+        } else {
+          counts.red++;
+        }
       });
       
       document.getElementById('red-count').textContent = counts.red;
-      document.getElementById('green-count').textContent = counts.green;
-      document.getElementById('yellow-count').textContent = counts.yellow;
+      document.getElementById('green-count').textContent = counts.white; // Repurpose green count for white cells
+      document.getElementById('yellow-count').textContent = dyingWhiteCellCount; // Repurpose yellow count for dying white cells
       document.getElementById('total-count').textContent = cells.length;
-      document.getElementById('active-clone').textContent = activeClone.charAt(0).toUpperCase() + activeClone.slice(1);
+      document.getElementById('active-clone').textContent = "Red";
       document.getElementById('cage-radius').textContent = Math.round(CAGE_RADIUS);
       document.getElementById('pressure').textContent = pressureData.pressureLevel;
       document.getElementById('max-cells-display').textContent = MAX_CELLS;
