@@ -23,6 +23,7 @@
       text-align: center;
       margin-bottom: 20px;
       max-width: 800px;
+      width: 100%;
     }
     
     h1 {
@@ -45,8 +46,10 @@
     
     .simulation-container {
       position: relative;
-      width: 600px;
-      height: 600px;
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      aspect-ratio: 1/1;
       margin: 20px 0;
     }
     
@@ -127,6 +130,45 @@
     .footer a:hover {
       text-decoration: underline;
     }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+      
+      .subtitle {
+        font-size: 1em;
+      }
+      
+      .play-button {
+        width: 80px;
+        height: 80px;
+      }
+      
+      .play-icon {
+        border-width: 20px 0 20px 32px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .play-button {
+        width: 60px;
+        height: 60px;
+      }
+      
+      .play-icon {
+        border-width: 15px 0 15px 24px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -146,7 +188,7 @@
         <div class="play-icon"></div>
       </div>
     </div>
-    <iframe id="simulation-frame" src="animations/clonal-succession-cycle.html" width="600" height="600" style="border: none; display: none;"></iframe>
+    <iframe id="simulation-frame" src="animations/clonal-succession-cycle.html" width="100%" height="100%" style="border: none; display: none; position: absolute; top: 0; left: 0;"></iframe>
   </div>
 
   <a href="reference.html" class="reference-link">

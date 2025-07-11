@@ -98,6 +98,14 @@ Clonal succession is the process by which tumors maintain their cell populations
 
 Try the simulation directly in your browser with full interactive controls. The main animation (clonal-succession-cycle.html) demonstrates the complete clonal succession process.
 
+### Mobile Compatibility
+
+The simulation is fully responsive and works on mobile devices, tablets, and desktop browsers. The interface automatically adjusts to different screen sizes for optimal viewing and interaction.
+
+- **Mobile phones**: Optimized controls and vertical layout
+- **Tablets**: Responsive canvas and touch-friendly interface
+- **Desktop**: Full-featured experience with detailed statistics
+
 ## Repository Structure
 
 ```
@@ -110,6 +118,9 @@ clonal-succession/
 │   └── biological-basis.md   # Scientific background
 ├── models/                   # Mathematical and computational models
 ├── animations/               # Animation code and assets
+│   ├── mobile-responsive.css # Responsive styles for mobile devices
+│   ├── mobile-responsive.js  # JavaScript for responsive canvas
+│   └── MOBILE_RESPONSIVE_GUIDE.md # Guide for implementing mobile responsiveness
 ├── data/                     # Experimental data and observations
 └── next-steps/               # Development roadmap
 ```
@@ -120,6 +131,7 @@ clonal-succession/
 2. Examine the current models in `models/`
 3. Check the development roadmap in `next-steps/`
 4. Run animations to visualize the clonal succession process
+5. For mobile development, see `animations/MOBILE_RESPONSIVE_GUIDE.md`
 
 ## Contributing
 

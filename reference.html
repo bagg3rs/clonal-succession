@@ -22,6 +22,7 @@
       text-align: center;
       margin-bottom: 30px;
       max-width: 800px;
+      width: 100%;
     }
     
     h1 {
@@ -60,8 +61,8 @@
     
     .animations-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
       max-width: 1200px;
       width: 100%;
     }
@@ -157,6 +158,40 @@
       color: #aaa;
       border-bottom: 1px solid #333;
       padding-bottom: 10px;
+    }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+      
+      .subtitle {
+        font-size: 1em;
+      }
+      
+      .animations-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .animations-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .animation-preview {
+        height: 180px;
+      }
     }
   </style>
 </head>
