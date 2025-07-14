@@ -30,10 +30,13 @@ To make any animation file in this project mobile responsive, follow these steps
    ```html
    <canvas id="canvas" width="600" height="600"></canvas>
    <div class="controls">
-     <!-- Controls content -->
-   </div>
-   <div class="stats">
-     <!-- Stats content -->
+     <button onclick="resetSimulation()">🔄 Reset</button>
+     <button onclick="setDoubleSpeed()">2x Speed</button>
+     
+     <div class="stat-item">
+       <div class="stat-value" id="total-count">1</div>
+       <div>Total Cells</div>
+     </div>
    </div>
    ```
 
@@ -44,7 +47,7 @@ To make any animation file in this project mobile responsive, follow these steps
 This CSS file provides:
 - Responsive layout for the body and container elements
 - Proper scaling for the canvas element on different screen sizes
-- Responsive controls and stats display positioned below the canvas
+- Responsive controls display positioned below the canvas in a single row
 - Media queries for tablets and mobile phones
 
 ### mobile-responsive.js
@@ -72,7 +75,7 @@ If you need to implement responsiveness manually in a file, here are the key com
    }
    ```
 
-3. Position controls below the canvas:
+3. Position controls below the canvas in a single row:
    ```css
    .controls {
      margin-top: 0;
@@ -80,23 +83,31 @@ If you need to implement responsiveness manually in a file, here are the key com
      width: 100%;
      max-width: 600px;
      display: flex;
+     gap: 10px;
+     align-items: center;
      flex-wrap: wrap;
      justify-content: center;
-     order: 1; /* Controls after canvas */
+     order: 1;
    }
    
-   .stats {
-     margin-top: 0;
-     width: 100%;
-     max-width: 600px;
+   .stat-item {
+     text-align: center;
+     margin: 5px;
      display: flex;
-     flex-wrap: wrap;
+     flex-direction: column;
+     align-items: center;
      justify-content: center;
-     order: 2; /* Stats after controls */
    }
    ```
 
-4. Add JavaScript to handle canvas resizing:
+4. Add JavaScript for the 2x speed button:
+   ```javascript
+   function setDoubleSpeed() {
+     simulationSpeed = simulationSpeed === 2 ? 1 : 2;
+   }
+   ```
+
+5. Add JavaScript to handle canvas resizing:
    ```javascript
    function resizeCanvas() {
      const canvas = document.getElementById('canvas');
@@ -118,3 +129,4 @@ After implementation, test your animation on:
 - Mobile devices in portrait and landscape orientation
 - Tablets
 - Ensure controls are usable on touch devices
+- Verify that the reset button, 2x speed button, and total cell count display correctly in a single row

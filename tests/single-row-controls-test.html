@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Single Row Controls Test</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .simulation-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      height: 0;
+      padding-bottom: 100%; /* Creates a 1:1 aspect ratio */
+      margin: 20px 0;
+      border: 2px solid #555;
+      border-radius: 10px;
+      background: #222;
+      overflow: hidden;
+    }
+    
+    iframe {
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    h1 {
+      color: #ff4444;
+      margin-bottom: 10px;
+      font-size: 2em;
+    }
+    
+    .description {
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      max-width: 600px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Single Row Controls Test</h1>
+  <div class="description">
+    This test verifies that the animation controls are displayed in a single row with:
+    <ul>
+      <li>Reset button</li>
+      <li>2x Speed button</li>
+      <li>Total cell count</li>
+    </ul>
+  </div>
+
+  <div class="simulation-container">
+    <iframe src="../animations/clonal-succession-cycle.html"></iframe>
+  </div>
+</body>
+</html>

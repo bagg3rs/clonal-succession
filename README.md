@@ -104,7 +104,15 @@ The simulation is fully responsive and works on mobile devices, tablets, and des
 
 - **Mobile phones**: Optimized controls and vertical layout
 - **Tablets**: Responsive canvas and touch-friendly interface
-- **Desktop**: Full-featured experience with detailed statistics
+- **Desktop**: Full-featured experience
+
+### User Interface
+
+The simulation features a streamlined interface with:
+- A single row of controls under the animation
+- Reset button and 2x Speed button on the same line
+- Total cell count display
+- Simplified UI for better focus on the simulation
 
 ## Repository Structure
 
