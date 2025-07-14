@@ -112,6 +112,12 @@ Based on the next-steps documentation, focus on:
 - Peer review mathematical models
 - Maintain reproducible workflows
 
+### Issue Management
+- All GitHub issues are automatically assigned to the Q developer agent
+- The Q developer agent handles initial triage and coordination
+- For urgent matters, mention specific team members in the issue
+- Include detailed reproduction steps in bug reports
+
 ## Resources and References
 
 ### Internal Documentation
@@ -135,7 +141,7 @@ Based on the next-steps documentation, focus on:
 4. **Project Direction**: Review development-roadmap.md
 
 ### Contact and Collaboration
-- Document questions in GitHub issues
+- Document questions in GitHub issues (automatically assigned to Q developer agent)
 - Propose changes through pull requests
 - Discuss research directions in project wiki
 - Share findings through documentation updates

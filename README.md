@@ -141,6 +141,16 @@ This research is focused on understanding tumor biology through computational mo
 - Biological validation
 - Documentation improvements
 
+### Issue Management
+
+All issues opened in this repository are automatically assigned to our Q developer agent for initial triage and handling. The Q developer agent will:
+- Review and categorize new issues
+- Assign appropriate priority
+- Coordinate with the development team for resolution
+- Provide initial feedback on reported issues
+
+If you need to contact a specific team member, please mention them in your issue.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

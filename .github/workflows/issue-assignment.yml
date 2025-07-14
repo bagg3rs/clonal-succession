@@ -1,0 +1,29 @@
+name: Assign Issues to Q Developer
+
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  assign-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign issues to Q developer
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Assign the issue to the Q developer agent
+            // Replace 'q-developer' with the actual GitHub username of your Q developer agent
+            await github.rest.issues.addAssignees({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              assignees: ['q-developer']
+            });
+            
+            console.log(`Issue #${issueNumber} has been assigned to Q developer agent`);
