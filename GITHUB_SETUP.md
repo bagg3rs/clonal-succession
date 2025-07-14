@@ -49,10 +49,11 @@ git push -u origin main
 ✅ **MIT License** for open collaboration
 ✅ **GitHub Pages deployment** with automatic updates
 ✅ **Professional README** with live demo links
+✅ **Automated issue assignment** to Q developer agent
 
 ## Next Steps
 
 - Share the GitHub Pages URL to showcase your research
 - Collaborate with other researchers by sharing the repository
 - Continue development by pushing new commits (auto-deploys)
-- Use GitHub Issues to track future enhancements
+- Use GitHub Issues to track future enhancements (all issues will be automatically assigned to the Q developer agent)
