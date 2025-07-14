@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Scroll Test</title>
+  <style>
+    body {
+      background: #111;
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    h1 {
+      color: #ff4444;
+      margin-bottom: 10px;
+      font-size: 2em;
+      text-align: center;
+    }
+    
+    .test-description {
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .simulation-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      height: 0;
+      padding-bottom: 100%; /* Creates a 1:1 aspect ratio */
+      margin: 20px auto;
+      border: 2px solid #555;
+      border-radius: 10px;
+      background: #222;
+      overflow: hidden;
+    }
+    
+    .play-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    
+    .play-button {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 68, 68, 0.8);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.3s, background 0.3s;
+    }
+    
+    .play-icon {
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 20px 0 20px 32px;
+      border-color: transparent transparent transparent #ffffff;
+      margin-left: 10px;
+    }
+    
+    .content-below {
+      margin-top: 20px;
+      padding: 20px;
+      background: #222;
+      border-radius: 10px;
+      border: 1px solid #444;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .test-result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #333;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .test-button {
+      background: #00e676;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    .test-button:hover {
+      background: #00c853;
+    }
+    
+    .scroll-indicator {
+      text-align: center;
+      margin-top: 30px;
+      color: #ff4444;
+      font-size: 1.2em;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+    
+    /* Add more content to ensure scrolling is needed */
+    .spacer {
+      height: 300px;
+      margin-top: 30px;
+      background: linear-gradient(to bottom, #222, #333);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mobile Scroll Test</h1>
+  
+  <div class="test-description">
+    This test verifies that users can scroll the page even when an iframe is present.
+    Try scrolling down to see if the page scrolls properly.
+  </div>
+  
+  <div class="simulation-container">
+    <div id="play-overlay" class="play-overlay">
+      <div class="play-button">
+        <div class="play-icon"></div>
+      </div>
+    </div>
+    <iframe id="simulation-frame" src="../animations/clonal-succession-cycle.html" scrolling="no" style="border: none; display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;"></iframe>
+  </div>
+  
+  <div class="scroll-indicator">
+    ↓ Scroll down to test ↓
+  </div>
+  
+  <div class="content-below">
+    <h2>Test Instructions</h2>
+    <p>1. Click the play button above to load the simulation</p>
+    <p>2. Try to scroll down this page using touch gestures</p>
+    <p>3. Verify that the page scrolls properly without the iframe capturing your touch events</p>
+    <p>4. Try interacting with the simulation to ensure it still works</p>
+    
+    <div class="test-result" id="test-result">
+      Test result will appear here after you click the button below
+    </div>
+    
+    <button class="test-button" id="test-button">Check Scroll Functionality</button>
+  </div>
+  
+  <div class="spacer">
+    Content at bottom of page
+  </div>
+  
+  <div class="spacer">
+    You should be able to scroll to here
+  </div>
+  
+  <script>
+    document.getElementById('play-overlay').addEventListener('click', function() {
+      // Hide the overlay
+      this.style.display = 'none';
+      
+      // Show the simulation iframe
+      const iframe = document.getElementById('simulation-frame');
+      iframe.style.display = 'block';
+      
+      // Make sure iframe is responsive
+      function adjustIframeSize() {
+        const container = document.querySelector('.simulation-container');
+        if (container && iframe) {
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+        }
+      }
+      
+      // Adjust on load and resize
+      adjustIframeSize();
+      window.addEventListener('resize', adjustIframeSize);
+      
+      // Fix for mobile scrolling issue
+      let touchStartY = 0;
+      let touchMoveY = 0;
+      let isScrolling = false;
+      
+      // Add touch event listeners to detect scrolling
+      document.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+        isScrolling = false;
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', function(e) {
+        touchMoveY = e.touches[0].clientY;
+        
+        // If user is scrolling vertically (up or down)
+        if (Math.abs(touchMoveY - touchStartY) > 10) {
+          isScrolling = true;
+          
+          // Temporarily disable pointer events on iframe to allow page scrolling
+          iframe.style.pointerEvents = 'none';
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchend', function() {
+        // Re-enable pointer events after scrolling stops
+        setTimeout(function() {
+          iframe.style.pointerEvents = 'auto';
+          isScrolling = false;
+        }, 100);
+      }, { passive: false });
+    });
+    
+    // Test button functionality
+    document.getElementById('test-button').addEventListener('click', function() {
+      const iframe = document.getElementById('simulation-frame');
+      const testResult = document.getElementById('test-result');
+      
+      if (iframe.style.display === 'block') {
+        // Check if our touch event handlers are attached
+        const hasScrollFix = typeof touchStartY !== 'undefined';
+        
+        testResult.innerHTML = `
+          <h3>Test Results</h3>
+          <p>Iframe is active: <span style="color: #00e676">✓</span></p>
+          <p>Scroll fix implemented: <span style="color: ${hasScrollFix ? '#00e676' : '#ff4444'}">${hasScrollFix ? '✓' : '✗'}</span></p>
+          <p>Iframe has scrolling="no" attribute: <span style="color: ${iframe.getAttribute('scrolling') === 'no' ? '#00e676' : '#ff4444'}">${iframe.getAttribute('scrolling') === 'no' ? '✓' : '✗'}</span></p>
+          <p>Overall status: <span style="color: ${hasScrollFix && iframe.getAttribute('scrolling') === 'no' ? '#00e676' : '#ff4444'}">${hasScrollFix && iframe.getAttribute('scrolling') === 'no' ? 'PASS' : 'FAIL'}</span></p>
+        `;
+      } else {
+        testResult.innerHTML = `
+          <h3>Test Results</h3>
+          <p>Please click the play button to load the simulation first.</p>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

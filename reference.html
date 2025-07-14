@@ -373,5 +373,115 @@
       Built with Matter.js physics engine and HTML5 Canvas
     </p>
   </div>
+
+  <script>
+    // Add mobile scrolling fix to all animation links
+    document.addEventListener('DOMContentLoaded', function() {
+      const animationLinks = document.querySelectorAll('.animation-link');
+      
+      animationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Create a modal with iframe
+          const modal = document.createElement('div');
+          modal.style.position = 'fixed';
+          modal.style.top = '0';
+          modal.style.left = '0';
+          modal.style.width = '100%';
+          modal.style.height = '100%';
+          modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+          modal.style.zIndex = '1000';
+          modal.style.display = 'flex';
+          modal.style.flexDirection = 'column';
+          modal.style.justifyContent = 'center';
+          modal.style.alignItems = 'center';
+          
+          // Close button
+          const closeButton = document.createElement('button');
+          closeButton.textContent = '✕ Close';
+          closeButton.style.position = 'absolute';
+          closeButton.style.top = '20px';
+          closeButton.style.right = '20px';
+          closeButton.style.background = '#ff4444';
+          closeButton.style.color = 'white';
+          closeButton.style.border = 'none';
+          closeButton.style.borderRadius = '4px';
+          closeButton.style.padding = '8px 16px';
+          closeButton.style.cursor = 'pointer';
+          closeButton.style.zIndex = '1001';
+          
+          // Container for iframe
+          const iframeContainer = document.createElement('div');
+          iframeContainer.style.position = 'relative';
+          iframeContainer.style.width = '90%';
+          iframeContainer.style.maxWidth = '600px';
+          iframeContainer.style.height = '0';
+          iframeContainer.style.paddingBottom = '90%';
+          iframeContainer.style.maxHeight = '90vh';
+          iframeContainer.style.overflow = 'hidden';
+          iframeContainer.style.borderRadius = '10px';
+          iframeContainer.style.border = '2px solid #333';
+          
+          // Create iframe with scrolling="no"
+          const iframe = document.createElement('iframe');
+          iframe.src = this.href;
+          iframe.style.position = 'absolute';
+          iframe.style.top = '0';
+          iframe.style.left = '0';
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = 'none';
+          iframe.setAttribute('scrolling', 'no');
+          
+          // Add elements to DOM
+          iframeContainer.appendChild(iframe);
+          modal.appendChild(closeButton);
+          modal.appendChild(iframeContainer);
+          document.body.appendChild(modal);
+          
+          // Prevent body scrolling when modal is open
+          document.body.style.overflow = 'hidden';
+          
+          // Close modal on button click
+          closeButton.addEventListener('click', function() {
+            document.body.removeChild(modal);
+            document.body.style.overflow = '';
+          });
+          
+          // Fix for mobile scrolling issue
+          let touchStartY = 0;
+          let touchMoveY = 0;
+          let isScrolling = false;
+          
+          // Add touch event listeners to detect scrolling
+          document.addEventListener('touchstart', function(e) {
+            touchStartY = e.touches[0].clientY;
+            isScrolling = false;
+          }, { passive: false });
+          
+          document.addEventListener('touchmove', function(e) {
+            touchMoveY = e.touches[0].clientY;
+            
+            // If user is scrolling vertically (up or down)
+            if (Math.abs(touchMoveY - touchStartY) > 10) {
+              isScrolling = true;
+              
+              // Temporarily disable pointer events on iframe to allow page scrolling
+              iframe.style.pointerEvents = 'none';
+            }
+          }, { passive: false });
+          
+          document.addEventListener('touchend', function() {
+            // Re-enable pointer events after scrolling stops
+            setTimeout(function() {
+              iframe.style.pointerEvents = 'auto';
+              isScrolling = false;
+            }, 100);
+          }, { passive: false });
+        });
+      });
+    });
+  </script>
 </body>
 </html>

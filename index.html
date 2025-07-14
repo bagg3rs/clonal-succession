@@ -201,7 +201,7 @@
         <div class="play-icon"></div>
       </div>
     </div>
-    <iframe id="simulation-frame" src="animations/clonal-succession-cycle.html" style="border: none; display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;"></iframe>
+    <iframe id="simulation-frame" src="animations/clonal-succession-cycle.html" scrolling="no" style="border: none; display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;"></iframe>
   </div>
 
   <a href="reference.html" class="reference-link">
@@ -240,6 +240,37 @@
       // Adjust on load and resize
       adjustIframeSize();
       window.addEventListener('resize', adjustIframeSize);
+      
+      // Fix for mobile scrolling issue
+      let touchStartY = 0;
+      let touchMoveY = 0;
+      let isScrolling = false;
+      
+      // Add touch event listeners to detect scrolling
+      document.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+        isScrolling = false;
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', function(e) {
+        touchMoveY = e.touches[0].clientY;
+        
+        // If user is scrolling vertically (up or down)
+        if (Math.abs(touchMoveY - touchStartY) > 10) {
+          isScrolling = true;
+          
+          // Temporarily disable pointer events on iframe to allow page scrolling
+          iframe.style.pointerEvents = 'none';
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchend', function() {
+        // Re-enable pointer events after scrolling stops
+        setTimeout(function() {
+          iframe.style.pointerEvents = 'auto';
+          isScrolling = false;
+        }, 100);
+      }, { passive: false });
     });
   </script>
 </body>
