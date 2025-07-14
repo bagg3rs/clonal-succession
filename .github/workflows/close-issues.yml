@@ -1,0 +1,131 @@
+name: Close Linked Issues on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  # Allow manual triggering for testing
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to process'
+        required: true
+        type: number
+
+jobs:
+  close-issues:
+    # Only run when PR is merged (not when just closed without merging)
+    # Skip this check for manual workflow runs
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Close linked issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Determine if this is a manual run or triggered by PR
+            let prNumber;
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = context.payload.inputs.pr_number;
+              console.log(`Manual run for PR #${prNumber}`);
+            } else {
+              prNumber = context.payload.pull_request.number;
+              console.log(`Processing merged PR #${prNumber}`);
+            }
+            
+            const repo = context.repo;
+            
+            // Get PR details
+            let pr;
+            try {
+              pr = await github.rest.pulls.get({
+                owner: repo.owner,
+                repo: repo.repo,
+                pull_number: prNumber
+              });
+            } catch (error) {
+              console.log(`Error fetching PR #${prNumber}: ${error}`);
+              return;
+            }
+            
+            const prBody = pr.data.body || '';
+            const prTitle = pr.data.title || '';
+            
+            console.log(`Processing PR #${prNumber} with title: "${prTitle}"`);
+            
+            // Regular expression to find issue references like "Fixes #123", "Closes #456", etc.
+            // Case insensitive to catch all variations
+            const issueRegex = /(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
+            
+            // Find all issue references in PR body
+            const bodyMatches = [...prBody.matchAll(issueRegex)] || [];
+            // Find all issue references in PR title
+            const titleMatches = [...prTitle.matchAll(issueRegex)] || [];
+            
+            // Combine all matches
+            const allMatches = [...bodyMatches, ...titleMatches];
+            
+            if (allMatches.length === 0) {
+              console.log('No issue references found in PR title or body');
+              return;
+            }
+            
+            // Process each issue reference
+            const processedIssues = new Set();
+            
+            for (const match of allMatches) {
+              const issueNumber = match[2];
+              
+              // Skip if we've already processed this issue
+              if (processedIssues.has(issueNumber)) {
+                continue;
+              }
+              
+              processedIssues.add(issueNumber);
+              console.log(`Found issue reference: #${issueNumber}`);
+              
+              try {
+                // Check if issue exists
+                const issue = await github.rest.issues.get({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  issue_number: parseInt(issueNumber)
+                });
+                
+                // Skip if issue is already closed
+                if (issue.data.state === 'closed') {
+                  console.log(`Issue #${issueNumber} is already closed, skipping`);
+                  continue;
+                }
+                
+                // Close the issue
+                await github.rest.issues.update({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  issue_number: parseInt(issueNumber),
+                  state: 'closed'
+                });
+                console.log(`Successfully closed issue #${issueNumber}`);
+                
+                // Add a comment to the issue indicating it was closed by this PR
+                await github.rest.issues.createComment({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  issue_number: parseInt(issueNumber),
+                  body: `This issue was closed by PR #${prNumber} (${pr.data.html_url})`
+                });
+                console.log(`Added comment to issue #${issueNumber}`);
+              } catch (error) {
+                console.log(`Error processing issue #${issueNumber}: ${error.message}`);
+              }
+            }
+            
+            console.log(`Processed ${processedIssues.size} issues`);
