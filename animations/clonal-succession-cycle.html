@@ -16,6 +16,7 @@
     .cage-stat { color: #00e676; }
     .max-cells-stat { color: #ffaa00; }
     .active-clone-stat { color: #ffffff; }
+    .time-stat { color: #00aaff; }
     
     button {
       background: #333;
@@ -42,18 +43,78 @@
   <canvas id="canvas" width="600" height="600" style="max-width: 100%; height: auto;"></canvas>
 
   <div class="controls">
+    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
     <button onclick="resetSimulation()">🔄 Reset</button>
-    <button onclick="setDoubleSpeed()">2x Speed</button>
     
+    <div class="control-group">
+      <label>Speed: 
+        <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="1" onchange="updateSpeed()">
+        <span id="speedValue">1.0</span>
+      </label>
+    </div>
+    
+    <div class="control-group">
+      <label>Max Cells: 
+        <input type="range" id="maxCellsControl" min="10" max="200" step="10" value="100" onchange="updateMaxCells()">
+        <span id="maxCellsValue">100</span>
+      </label>
+    </div>
+    
+    <div class="control-group">
+      <label>Stage: 
+        <select id="stageControl" onchange="updateStage()">
+          <option value="1">Stage 1 (Three stages)</option>
+          <option value="2">Stage 2 (Two populations)</option>
+        </select>
+      </label>
+    </div>
+    
+    <div class="control-group">
+      <button onclick="resetTime()">🕒 Reset Time</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-value red-stat" id="red-count">1</div>
+      <div id="red-label">Dividing Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="green-count" style="color: #ffff44;">0</div>
+      <div id="green-label">Non-dividing Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="yellow-count" style="color: #ffffff;">0</div>
+      <div id="yellow-label">Senescent Cells</div>
+    </div>
     <div class="stat-item">
       <div class="stat-value" id="total-count">1</div>
       <div>Total Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value active-clone-stat" id="active-clone">Red</div>
+      <div>Active Clone</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value cage-stat" id="cage-radius">14</div>
+      <div>Cage Radius</div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-value max-cells-stat" id="max-cells-display">100</div>
+      <div>Max Cells</div>
+    </div>
+    
+    <div class="stat-item">
+      <div class="stat-value time-stat" id="simulation-time">Day 1, 00:00</div>
+      <div>Simulation Time</div>
     </div>
   </div>
 
   <!-- Matter.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
   <script src="mobile-responsive.js"></script>
+  <script src="time-tracking.js"></script>
   
   <script>
     // Matter.js setup
@@ -82,6 +143,16 @@
     let simulationSpeed = 1;
     let frameCount = 0;
     let targetCageRadius = CAGE_RADIUS;
+    
+    // Time tracking variables
+    let simulationTimeData = {
+      totalFrames: 0,
+      days: 1,
+      hours: 0,
+      minutes: 0,
+      framesPerMinute: 10, // How many frames equal one minute in simulation time
+      lastSavedTime: null
+    };
     
     // CLONAL SUCCESSION STATE
     let activeClone = 'red';
@@ -602,6 +673,9 @@
       cells.push(initialCell);
       
       frameCount = 0;
+      
+      // Initialize time data
+      loadSavedTime();
     }
 
     function drawCells() {
@@ -716,11 +790,57 @@
     }
 
     function updateStats() {
-      // Update cage expansion but we don't need to display it anymore
-      updateCageExpansion();
+      const expansionData = updateCageExpansion();
       
-      // Only update total cell count
+      // Count cells by type and state
+      const counts = {
+        dividing: 0,
+        nonDividing: 0,
+        senescent: 0,
+        population1: {
+          dividing: 0,
+          nonDividing: 0,
+          senescent: 0
+        },
+        population2: {
+          dividing: 0,
+          nonDividing: 0,
+          senescent: 0
+        }
+      };
+      
+      cells.forEach(cell => {
+        // Count by state
+        if (cell.state === 'dividing') {
+          counts.dividing++;
+          if (cell.population === 1) counts.population1.dividing++;
+          else counts.population2.dividing++;
+        } else if (cell.state === 'non-dividing') {
+          counts.nonDividing++;
+          if (cell.population === 1) counts.population1.nonDividing++;
+          else counts.population2.nonDividing++;
+        } else if (cell.state === 'senescent') {
+          counts.senescent++;
+          if (cell.population === 1) counts.population1.senescent++;
+          else counts.population2.senescent++;
+        }
+      });
+      
+      // Update UI based on simulation stage
+      if (simulationStage === 1) {
+        document.getElementById('red-count').textContent = counts.dividing;
+        document.getElementById('green-count').textContent = counts.nonDividing;
+        document.getElementById('yellow-count').textContent = counts.senescent;
+      } else {
+        document.getElementById('red-count').textContent = counts.population1.dividing + counts.population1.nonDividing;
+        document.getElementById('green-count').textContent = counts.population2.dividing + counts.population2.nonDividing;
+        document.getElementById('yellow-count').textContent = counts.senescent;
+      }
+      
       document.getElementById('total-count').textContent = cells.length;
+      document.getElementById('active-clone').textContent = activeClone.charAt(0).toUpperCase() + activeClone.slice(1);
+      document.getElementById('cage-radius').textContent = Math.round(CAGE_RADIUS);
+      document.getElementById('max-cells-display').textContent = MAX_CELLS;
     }
 
     function gameLoop() {
@@ -732,6 +852,7 @@
         
         drawCells();
         updateStats();
+        updateSimulationTime();
         
         frameCount++;
       }
@@ -739,20 +860,48 @@
       requestAnimationFrame(gameLoop);
     }
 
+    function toggleSimulation() {
+      simulationRunning = !simulationRunning;
+    }
+
     function resetSimulation() {
       initializeSimulation();
     }
 
-    function setDoubleSpeed() {
-      simulationSpeed = simulationSpeed === 2 ? 1 : 2;
+    function updateSpeed() {
+      simulationSpeed = parseFloat(document.getElementById('speedControl').value);
+      document.getElementById('speedValue').textContent = simulationSpeed.toFixed(1);
+    }
+
+    function updateMaxCells() {
+      MAX_CELLS = parseInt(document.getElementById('maxCellsControl').value);
+      document.getElementById('maxCellsValue').textContent = MAX_CELLS;
+    }
+    
+    function updateStage() {
+      simulationStage = parseInt(document.getElementById('stageControl').value);
+      
+      // Update UI labels based on stage
+      if (simulationStage === 1) {
+        document.getElementById('red-label').textContent = "Dividing Cells";
+        document.getElementById('green-label').textContent = "Non-dividing Cells";
+        document.getElementById('yellow-label').textContent = "Senescent Cells";
+        document.getElementById('green-count').style.color = "#ffff44"; // Yellow
+      } else {
+        document.getElementById('red-label').textContent = "Population 1";
+        document.getElementById('green-label').textContent = "Population 2";
+        document.getElementById('yellow-label').textContent = "Senescent Cells";
+        document.getElementById('green-count').style.color = "#44ff44"; // Green
+      }
+      
+      // Reset simulation with new stage
+      resetSimulation();
     }
 
     // Initialize controls
-    // Set default values for removed controls
-    MAX_CELLS = 100;
-    simulationStage = 2;
-    // Always run the simulation
-    simulationRunning = true;
+    updateSpeed();
+    updateMaxCells();
+    document.getElementById('stageControl').value = simulationStage.toString();
     
     initializeSimulation();
     gameLoop();
