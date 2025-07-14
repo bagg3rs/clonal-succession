@@ -49,11 +49,48 @@ git push -u origin main
 ✅ **MIT License** for open collaboration
 ✅ **GitHub Pages deployment** with automatic updates
 ✅ **Professional README** with live demo links
-✅ **Automated issue assignment** to Q developer agent
 
 ## Next Steps
 
 - Share the GitHub Pages URL to showcase your research
 - Collaborate with other researchers by sharing the repository
 - Continue development by pushing new commits (auto-deploys)
-- Use GitHub Issues to track future enhancements (all issues will be automatically assigned to the Q developer agent)
+- Use GitHub Issues to track future enhancements
+
+## Issue and Pull Request Workflow
+
+### Creating and Managing Issues
+
+1. Go to the "Issues" tab in your repository
+2. Click "New issue" to create a new task or bug report
+3. Add a descriptive title and detailed description
+4. Assign labels, milestone, and assignee as needed
+5. Click "Submit new issue"
+
+### Linking Issues with Pull Requests
+
+When creating a pull request to address an issue:
+
+1. Include one of these keywords in the PR title or description:
+   - `closes #issue-number`
+   - `fixes #issue-number`
+   - `resolves #issue-number`
+
+2. When the PR is merged into the main branch, the referenced issues will automatically close
+
+3. Example PR description:
+   ```
+   This PR adds mobile responsive controls for small screens.
+   
+   Fixes #42
+   ```
+
+### Automated Issue Closing
+
+This repository is configured with a GitHub Actions workflow that:
+- Runs when a pull request is merged into the main branch
+- Identifies issues referenced in the PR title or description
+- Automatically closes those issues
+- Adds a comment to the closed issues referencing the PR that closed them
+
+For more details, see the [CONTRIBUTING.md](CONTRIBUTING.md) file.
