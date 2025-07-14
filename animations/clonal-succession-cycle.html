@@ -42,29 +42,12 @@
   <canvas id="canvas" width="600" height="600" style="max-width: 100%; height: auto;"></canvas>
 
   <div class="controls">
-    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
     <button onclick="resetSimulation()">🔄 Reset</button>
     
     <div class="control-group">
       <label>Speed: 
         <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="1" onchange="updateSpeed()">
         <span id="speedValue">1.0</span>
-      </label>
-    </div>
-    
-    <div class="control-group">
-      <label>Max Cells: 
-        <input type="range" id="maxCellsControl" min="10" max="200" step="10" value="100" onchange="updateMaxCells()">
-        <span id="maxCellsValue">100</span>
-      </label>
-    </div>
-    
-    <div class="control-group">
-      <label>Stage: 
-        <select id="stageControl" onchange="updateStage()">
-          <option value="1">Stage 1 (Three stages)</option>
-          <option value="2">Stage 2 (Two populations)</option>
-        </select>
       </label>
     </div>
   </div>
@@ -835,10 +818,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    function toggleSimulation() {
-      simulationRunning = !simulationRunning;
-    }
-
     function resetSimulation() {
       initializeSimulation();
     }
@@ -848,35 +827,13 @@
       document.getElementById('speedValue').textContent = simulationSpeed.toFixed(1);
     }
 
-    function updateMaxCells() {
-      MAX_CELLS = parseInt(document.getElementById('maxCellsControl').value);
-      document.getElementById('maxCellsValue').textContent = MAX_CELLS;
-    }
-    
-    function updateStage() {
-      simulationStage = parseInt(document.getElementById('stageControl').value);
-      
-      // Update UI labels based on stage
-      if (simulationStage === 1) {
-        document.getElementById('red-label').textContent = "Dividing Cells";
-        document.getElementById('green-label').textContent = "Non-dividing Cells";
-        document.getElementById('yellow-label').textContent = "Senescent Cells";
-        document.getElementById('green-count').style.color = "#ffff44"; // Yellow
-      } else {
-        document.getElementById('red-label').textContent = "Population 1";
-        document.getElementById('green-label').textContent = "Population 2";
-        document.getElementById('yellow-label').textContent = "Senescent Cells";
-        document.getElementById('green-count').style.color = "#44ff44"; // Green
-      }
-      
-      // Reset simulation with new stage
-      resetSimulation();
-    }
-
     // Initialize controls
     updateSpeed();
-    updateMaxCells();
-    document.getElementById('stageControl').value = simulationStage.toString();
+    // Set default values for removed controls
+    MAX_CELLS = 100;
+    simulationStage = 2;
+    // Always run the simulation
+    simulationRunning = true;
     
     initializeSimulation();
     gameLoop();

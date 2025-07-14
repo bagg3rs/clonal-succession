@@ -128,9 +128,7 @@
 </head>
 <body>
   <div class="controls">
-    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
     <button onclick="resetSimulation()">🔄 Reset</button>
-    <button onclick="exportState()">💾 Export State</button>
     <label>Speed: <input type="range" id="speedControl" min="0.1" max="3" step="0.1" value="1" onchange="updateSpeed()"></label>
   </div>
 
@@ -388,10 +386,6 @@
       tickCount++;
     }
 
-    function toggleSimulation() {
-      simulationRunning = !simulationRunning;
-    }
-
     function resetSimulation() {
       initializeSimulation();
       drawCells();
@@ -402,31 +396,13 @@
       simulationSpeed = parseFloat(document.getElementById('speedControl').value);
     }
 
-    function exportState() {
-      const exportData = {
-        timestamp: new Date().toISOString(),
-        finalState: {
-          cellCount: cells.length,
-          divisionsLeft: divisionsLeft,
-          generation: generation,
-          tickCount: tickCount
-        },
-        history: stateHistory
-      };
-      
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `red-clone-simulation-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
     // Initialize and start simulation
     initializeSimulation();
     drawCells();
     updateStats();
+    
+    // Always run the simulation
+    simulationRunning = true;
     
     // Smooth animation loop
     setInterval(() => {
