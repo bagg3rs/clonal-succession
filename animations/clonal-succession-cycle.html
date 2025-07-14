@@ -42,12 +42,29 @@
   <canvas id="canvas" width="600" height="600" style="max-width: 100%; height: auto;"></canvas>
 
   <div class="controls">
+    <button onclick="toggleSimulation()">⏯️ Play/Pause</button>
     <button onclick="resetSimulation()">🔄 Reset</button>
     
     <div class="control-group">
       <label>Speed: 
         <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="1" onchange="updateSpeed()">
         <span id="speedValue">1.0</span>
+      </label>
+    </div>
+    
+    <div class="control-group">
+      <label>Max Cells: 
+        <input type="range" id="maxCellsControl" min="10" max="200" step="10" value="100" onchange="updateMaxCells()">
+        <span id="maxCellsValue">100</span>
+      </label>
+    </div>
+    
+    <div class="control-group">
+      <label>Stage: 
+        <select id="stageControl" onchange="updateStage()">
+          <option value="1">Stage 1 (Three stages)</option>
+          <option value="2">Stage 2 (Two populations)</option>
+        </select>
       </label>
     </div>
   </div>
@@ -77,10 +94,13 @@
       <div class="stat-value cage-stat" id="cage-radius">14</div>
       <div>Cage Radius</div>
     </div>
-
     <div class="stat-item">
       <div class="stat-value max-cells-stat" id="max-cells-display">100</div>
       <div>Max Cells</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="simulation-time" style="color: #00bcd4;">Day 0, 00:00</div>
+      <div>Simulation Time</div>
     </div>
   </div>
 
@@ -115,6 +135,13 @@
     let simulationSpeed = 1;
     let frameCount = 0;
     let targetCageRadius = CAGE_RADIUS;
+    
+    // Simulation time variables
+    let simulationSeconds = 0;
+    let simulationMinutes = 0;
+    let simulationHours = 0;
+    let simulationDays = 0;
+    const SECONDS_PER_FRAME = 0.25; // Each frame represents 15 minutes in simulation time
     
     // CLONAL SUCCESSION STATE
     let activeClone = 'red';
@@ -630,6 +657,12 @@
       successionTimer = 0;
       dyingWhiteCellCount = 0;
       
+      // Reset simulation time
+      simulationSeconds = 0;
+      simulationMinutes = 0;
+      simulationHours = 0;
+      simulationDays = 0;
+      
       // Start with one red cell
       const initialCell = new Cell(CAGE_CENTER.x, CAGE_CENTER.y, 'red', 1);
       cells.push(initialCell);
@@ -800,11 +833,37 @@
       document.getElementById('active-clone').textContent = activeClone.charAt(0).toUpperCase() + activeClone.slice(1);
       document.getElementById('cage-radius').textContent = Math.round(CAGE_RADIUS);
       document.getElementById('max-cells-display').textContent = MAX_CELLS;
+      
+      // Format and display simulation time
+      const formattedHours = simulationHours.toString().padStart(2, '0');
+      const formattedMinutes = simulationMinutes.toString().padStart(2, '0');
+      
+      // Add visual indicator of speed in the time display
+      if (simulationSpeed > 1) {
+        document.getElementById('simulation-time').innerHTML = `Day ${simulationDays}, ${formattedHours}:${formattedMinutes} <span style="font-size: 0.8em; color: #ff9800;">(${simulationSpeed}x)</span>`;
+      } else {
+        document.getElementById('simulation-time').textContent = `Day ${simulationDays}, ${formattedHours}:${formattedMinutes}`;
+      }
     }
 
     function gameLoop() {
       if (simulationRunning) {
         Engine.update(engine, 16.67 * simulationSpeed);
+        
+        // Update simulation time
+        simulationSeconds += SECONDS_PER_FRAME * simulationSpeed;
+        if (simulationSeconds >= 60) {
+          simulationSeconds = 0;
+          simulationMinutes++;
+          if (simulationMinutes >= 60) {
+            simulationMinutes = 0;
+            simulationHours++;
+            if (simulationHours >= 24) {
+              simulationHours = 0;
+              simulationDays++;
+            }
+          }
+        }
         
         updateCells();
         divideCells();
@@ -818,6 +877,10 @@
       requestAnimationFrame(gameLoop);
     }
 
+    function toggleSimulation() {
+      simulationRunning = !simulationRunning;
+    }
+
     function resetSimulation() {
       initializeSimulation();
     }
@@ -827,13 +890,35 @@
       document.getElementById('speedValue').textContent = simulationSpeed.toFixed(1);
     }
 
+    function updateMaxCells() {
+      MAX_CELLS = parseInt(document.getElementById('maxCellsControl').value);
+      document.getElementById('maxCellsValue').textContent = MAX_CELLS;
+    }
+    
+    function updateStage() {
+      simulationStage = parseInt(document.getElementById('stageControl').value);
+      
+      // Update UI labels based on stage
+      if (simulationStage === 1) {
+        document.getElementById('red-label').textContent = "Dividing Cells";
+        document.getElementById('green-label').textContent = "Non-dividing Cells";
+        document.getElementById('yellow-label').textContent = "Senescent Cells";
+        document.getElementById('green-count').style.color = "#ffff44"; // Yellow
+      } else {
+        document.getElementById('red-label').textContent = "Population 1";
+        document.getElementById('green-label').textContent = "Population 2";
+        document.getElementById('yellow-label').textContent = "Senescent Cells";
+        document.getElementById('green-count').style.color = "#44ff44"; // Green
+      }
+      
+      // Reset simulation with new stage
+      resetSimulation();
+    }
+
     // Initialize controls
     updateSpeed();
-    // Set default values for removed controls
-    MAX_CELLS = 100;
-    simulationStage = 2;
-    // Always run the simulation
-    simulationRunning = true;
+    updateMaxCells();
+    document.getElementById('stageControl').value = simulationStage.toString();
     
     initializeSimulation();
     gameLoop();

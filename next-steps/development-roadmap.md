@@ -65,6 +65,7 @@
 - [ ] Parameter estimation methods
 
 ### Visualization Enhancements
+- [x] Add time and day display to simulations
 - [ ] 3D visualization options
 - [ ] Time-series analysis tools
 - [ ] Interactive exploration interface

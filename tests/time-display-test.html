@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Display Test</title>
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    h1 {
+      color: #00bcd4;
+      margin-bottom: 20px;
+    }
+    
+    .test-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px 0;
+      padding: 20px;
+      background: #222;
+      border-radius: 10px;
+      border: 1px solid #333;
+    }
+    
+    .test-description {
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    
+    .test-iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .test-results {
+      padding: 15px;
+      background: #333;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    
+    .test-results h3 {
+      margin-top: 0;
+      color: #00bcd4;
+    }
+    
+    .test-results ul {
+      padding-left: 20px;
+    }
+    
+    .test-results li {
+      margin-bottom: 10px;
+    }
+    
+    .back-link {
+      margin-top: 30px;
+      background: #333;
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      border: 1px solid #555;
+      transition: background 0.3s;
+      display: inline-block;
+    }
+    
+    .back-link:hover {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Time Display Test</h1>
+  
+  <div class="test-container">
+    <div class="test-description">
+      <p>This test verifies that the time and day display feature works correctly in the simulation.</p>
+      <p>The simulation should show the current simulation time and day in the format "Day X, HH:MM".</p>
+      <p>The time should advance at a rate determined by the simulation speed.</p>
+    </div>
+    
+    <iframe class="test-iframe" src="../animations/clonal-succession-cycle.html"></iframe>
+    
+    <div class="test-results">
+      <h3>Expected Behavior:</h3>
+      <ul>
+        <li>The simulation time should start at "Day 0, 00:00"</li>
+        <li>The time should advance as the simulation runs</li>
+        <li>Changing the simulation speed should affect the rate at which time advances</li>
+        <li>When the simulation speed is greater than 1, the speed should be displayed next to the time</li>
+        <li>Resetting the simulation should reset the time to "Day 0, 00:00"</li>
+      </ul>
+    </div>
+  </div>
+  
+  <a href="../reference.html" class="back-link">
+    ← Back to References
+  </a>
+</body>
+</html>

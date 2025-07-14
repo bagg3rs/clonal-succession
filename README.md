@@ -91,6 +91,7 @@ Clonal succession is the process by which tumors maintain their cell populations
 - **Green population**: Second clonal expansion phase  
 - **Pattern**: Alternating waves of growth and decline
 - **Net effect**: Stable tumour with fluctuating growth activity 
+- **Simulation time**: The simulation displays the passing of time in days and hours, providing a visual reference for the timeline of clonal succession events
 
 ## 🚀 Live Demo
 
@@ -112,12 +113,10 @@ The simulation is fully responsive and works on mobile devices, tablets, and des
 clonal-succession/
 ├── index.html                # Main demo page
 ├── README.md                 # This file
-├── CONTRIBUTING.md           # Contribution guidelines
 ├── docs/                     # Documentation
 │   ├── research-notes.md     # Detailed research notes
 │   ├── audio-transcript.md   # Original audio transcript
-│   ├── biological-basis.md   # Scientific background
-│   └── github-workflow.md    # GitHub workflow guide
+│   └── biological-basis.md   # Scientific background
 ├── models/                   # Mathematical and computational models
 ├── animations/               # Animation code and assets
 │   ├── mobile-responsive.css # Responsive styles for mobile devices
@@ -134,7 +133,6 @@ clonal-succession/
 3. Check the development roadmap in `next-steps/`
 4. Run animations to visualize the clonal succession process
 5. For mobile development, see `animations/MOBILE_RESPONSIVE_GUIDE.md`
-6. For contributing to the project, see `CONTRIBUTING.md` and `docs/github-workflow.md`
 
 ## Contributing
 
@@ -143,29 +141,6 @@ This research is focused on understanding tumor biology through computational mo
 - Animation and visualization
 - Biological validation
 - Documentation improvements
-
-### Contribution Workflow
-
-1. **Find or create an issue** - Before starting work, make sure there's an issue describing the feature or bug
-2. **Fork and clone** the repository
-3. **Create a branch** for your changes
-4. **Make your changes** and commit them with descriptive messages
-5. **Push your branch** to your fork
-6. **Create a pull request** linking to the issue
-
-### Linking Issues with Pull Requests
-
-When creating a pull request, use one of the following keywords in the PR title or description to automatically close the related issue when the PR is merged:
-
-- `closes #issue-number`
-- `fixes #issue-number`
-- `resolves #issue-number`
-
-For example:
-- "Add mobile responsive controls, fixes #42"
-- "PR description that closes #123 and fixes #456"
-
-This will automatically close the referenced issues when the pull request is merged into the main branch.
 
 ## License
 
