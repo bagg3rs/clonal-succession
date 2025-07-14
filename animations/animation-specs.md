@@ -96,6 +96,7 @@ This document outlines the requirements and specifications for creating animatio
 - **Speed control**: Adjust animation speed (0.1x to 10x)
 - **Step mode**: Advance frame by frame
 - **Reset**: Return to initial state
+- **Position**: Controls positioned below the animation canvas
 
 ### Parameter Adjustment
 - **Growth rates**: Slider for each clone's growth rate

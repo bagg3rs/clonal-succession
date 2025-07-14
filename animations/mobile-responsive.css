@@ -23,10 +23,12 @@ canvas {
   height: auto;
   aspect-ratio: 1/1;
   object-fit: contain;
+  margin-bottom: 20px; /* Add margin below canvas */
 }
 
 .controls {
-  margin-bottom: 20px;
+  margin-top: 0; /* Remove top margin */
+  margin-bottom: 20px; /* Keep some space below controls */
   display: flex;
   gap: 10px;
   align-items: center;
@@ -34,10 +36,11 @@ canvas {
   justify-content: center;
   width: 100%;
   max-width: 600px;
+  order: 1; /* Move controls after canvas */
 }
 
 .stats {
-  margin-top: 20px;
+  margin-top: 0; /* Adjust top margin */
   display: flex;
   gap: 15px;
   font-size: 14px;
@@ -45,6 +48,7 @@ canvas {
   justify-content: center;
   width: 100%;
   max-width: 600px;
+  order: 2; /* Keep stats after controls */
 }
 
 .stat-item {
@@ -90,9 +94,14 @@ canvas {
     padding: 5px;
   }
   
+  canvas {
+    margin-bottom: 15px; /* Slightly reduced margin on small screens */
+  }
+  
   .controls {
     flex-direction: column;
     align-items: stretch;
+    margin-bottom: 15px; /* Reduced margin on small screens */
   }
   
   .control-group {

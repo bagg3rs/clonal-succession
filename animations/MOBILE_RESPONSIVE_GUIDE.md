@@ -26,6 +26,17 @@ To make any animation file in this project mobile responsive, follow these steps
    <canvas id="canvas" width="600" height="600"></canvas>
    ```
 
+5. Ensure the HTML elements are in the correct order:
+   ```html
+   <canvas id="canvas" width="600" height="600"></canvas>
+   <div class="controls">
+     <!-- Controls content -->
+   </div>
+   <div class="stats">
+     <!-- Stats content -->
+   </div>
+   ```
+
 ## What These Files Do
 
 ### mobile-responsive.css
@@ -33,7 +44,7 @@ To make any animation file in this project mobile responsive, follow these steps
 This CSS file provides:
 - Responsive layout for the body and container elements
 - Proper scaling for the canvas element on different screen sizes
-- Responsive controls and stats display
+- Responsive controls and stats display positioned below the canvas
 - Media queries for tablets and mobile phones
 
 ### mobile-responsive.js
@@ -48,6 +59,7 @@ This JavaScript file:
 If you need to implement responsiveness manually in a file, here are the key components:
 
 1. Add the viewport meta tag
+
 2. Make the canvas responsive with CSS:
    ```css
    canvas {
@@ -56,10 +68,35 @@ If you need to implement responsiveness manually in a file, here are the key com
      max-height: 70vh;
      height: auto;
      aspect-ratio: 1/1;
+     margin-bottom: 20px; /* Add margin below canvas */
    }
    ```
 
-3. Add JavaScript to handle canvas resizing:
+3. Position controls below the canvas:
+   ```css
+   .controls {
+     margin-top: 0;
+     margin-bottom: 20px;
+     width: 100%;
+     max-width: 600px;
+     display: flex;
+     flex-wrap: wrap;
+     justify-content: center;
+     order: 1; /* Controls after canvas */
+   }
+   
+   .stats {
+     margin-top: 0;
+     width: 100%;
+     max-width: 600px;
+     display: flex;
+     flex-wrap: wrap;
+     justify-content: center;
+     order: 2; /* Stats after controls */
+   }
+   ```
+
+4. Add JavaScript to handle canvas resizing:
    ```javascript
    function resizeCanvas() {
      const canvas = document.getElementById('canvas');
@@ -72,23 +109,6 @@ If you need to implement responsiveness manually in a file, here are the key com
    
    resizeCanvas();
    window.addEventListener('resize', resizeCanvas);
-   ```
-
-4. Make controls and stats responsive with CSS:
-   ```css
-   .controls, .stats {
-     width: 100%;
-     max-width: 600px;
-     display: flex;
-     flex-wrap: wrap;
-     justify-content: center;
-   }
-   
-   @media (max-width: 480px) {
-     .controls {
-       flex-direction: column;
-     }
-   }
    ```
 
 ## Testing
