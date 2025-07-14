@@ -39,21 +39,13 @@ canvas {
   order: 1; /* Move controls after canvas */
 }
 
-.stats {
-  margin-top: 0; /* Adjust top margin */
-  display: flex;
-  gap: 15px;
-  font-size: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-  max-width: 600px;
-  order: 2; /* Keep stats after controls */
-}
-
 .stat-item {
   text-align: center;
   margin: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .control-group {
@@ -99,19 +91,13 @@ canvas {
   }
   
   .controls {
-    flex-direction: column;
-    align-items: stretch;
+    gap: 8px;
     margin-bottom: 15px; /* Reduced margin on small screens */
   }
   
-  .control-group {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
   button {
-    width: 100%;
-    margin-bottom: 5px;
+    padding: 6px 12px;
+    font-size: 14px;
   }
   
   .stat-value {
