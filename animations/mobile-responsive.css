@@ -39,6 +39,29 @@ canvas {
   order: 1; /* Move controls after canvas */
 }
 
+/* Button styling */
+.controls button {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  height: 40px;
+  min-width: 90px;
+  font-size: 15px;
+}
+
+.controls button:hover {
+  background: #444;
+}
+
+.controls button:active {
+  transform: scale(0.95);
+  background: #555;
+}
+
 .stat-item {
   text-align: center;
   margin: 5px;
@@ -46,6 +69,11 @@ canvas {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  background: rgba(51, 51, 51, 0.7);
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(85, 85, 85, 0.5);
+  min-width: 70px;
 }
 
 .control-group {
@@ -62,6 +90,8 @@ canvas {
 @media (max-width: 768px) {
   .controls {
     gap: 5px;
+    flex-direction: row; /* Maintain horizontal layout */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
   }
   
   .stats {
@@ -79,6 +109,14 @@ canvas {
   input[type="range"] {
     width: 80px;
   }
+  
+  .controls button {
+    flex: 0 0 auto; /* Don't allow buttons to grow or shrink */
+  }
+  
+  .stat-item {
+    flex: 0 0 auto; /* Don't allow stat items to grow or shrink */
+  }
 }
 
 @media (max-width: 480px) {
@@ -93,11 +131,14 @@ canvas {
   .controls {
     gap: 8px;
     margin-bottom: 15px; /* Reduced margin on small screens */
+    justify-content: space-around; /* Better spacing on small screens */
   }
   
-  button {
+  .controls button {
     padding: 6px 12px;
     font-size: 14px;
+    min-width: 80px; /* Ensure buttons have a minimum width */
+    margin: 0 2px; /* Add small horizontal margins */
   }
   
   .stat-value {
@@ -107,5 +148,6 @@ canvas {
   .stat-item {
     margin: 3px;
     font-size: 12px;
+    padding: 0 5px; /* Add horizontal padding */
   }
 }
