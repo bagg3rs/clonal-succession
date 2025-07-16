@@ -9,7 +9,7 @@
       background: #111;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       min-height: 100vh;
       font-family: Arial, sans-serif;
@@ -17,6 +17,7 @@
       margin: 0;
       padding: 20px;
       box-sizing: border-box;
+      overflow-x: hidden;
     }
     
     .header {
@@ -48,8 +49,7 @@
       position: relative;
       width: 100%;
       max-width: 600px;
-      height: 0;
-      padding-bottom: 100%; /* Creates a 1:1 aspect ratio */
+      height: 600px;
       margin: 20px 0;
       border: 2px solid #555;
       border-radius: 10px;
@@ -135,7 +135,23 @@
       text-decoration: underline;
     }
     
-    /* Mobile responsive styles */
+    /* Desktop responsive styles */
+    @media (min-width: 1200px) {
+      .simulation-container {
+        max-width: 700px;
+        height: 700px;
+      }
+      
+      h1 {
+        font-size: 3em;
+      }
+      
+      .subtitle {
+        font-size: 1.4em;
+      }
+    }
+    
+    /* Tablet responsive styles */
     @media (max-width: 768px) {
       h1 {
         font-size: 2em;
@@ -155,11 +171,14 @@
       }
       
       .simulation-container {
-        max-width: 100%;
+        max-width: 90vw;
+        height: 90vw;
+        max-height: 500px;
         margin: 10px 0;
       }
     }
     
+    /* Mobile responsive styles */
     @media (max-width: 480px) {
       body {
         padding: 10px;
@@ -167,6 +186,14 @@
       
       h1 {
         font-size: 1.8em;
+      }
+      
+      .subtitle {
+        font-size: 0.9em;
+      }
+      
+      .description {
+        font-size: 0.9em;
       }
       
       .play-button {
@@ -179,7 +206,32 @@
       }
       
       .simulation-container {
+        max-width: 95vw;
+        height: 95vw;
+        max-height: 400px;
         margin: 5px 0;
+      }
+      
+      .reference-link {
+        padding: 10px 16px;
+        font-size: 0.9em;
+      }
+      
+      .footer {
+        font-size: 0.8em;
+        margin-top: 20px;
+      }
+    }
+    
+    /* Very small screens */
+    @media (max-width: 320px) {
+      .simulation-container {
+        height: 300px;
+        max-height: 300px;
+      }
+      
+      h1 {
+        font-size: 1.5em;
       }
     }
   </style>
@@ -234,6 +286,20 @@
         if (container && iframe) {
           iframe.style.width = '100%';
           iframe.style.height = '100%';
+          
+          // Send resize message to iframe content
+          iframe.onload = function() {
+            try {
+              iframe.contentWindow.postMessage({
+                type: 'resize',
+                width: container.clientWidth,
+                height: container.clientHeight
+              }, '*');
+            } catch (e) {
+              // Cross-origin restrictions may prevent this
+              console.log('Could not send resize message to iframe');
+            }
+          };
         }
       }
       
