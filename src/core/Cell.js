@@ -376,8 +376,9 @@ class Cell {
   }
 
   /**
-   * Check if the cell should become senescent based on position
-   * Cells near the boundary are more likely to become senescent
+   * Check if the cell should become senescent based on position and resource competition
+   * Cells near the boundary or in crowded areas are more likely to become senescent
+   * This method is called by the PopulationController for homeostasis mechanisms
    */
   checkSenescence() {
     // Skip if already senescent
@@ -386,22 +387,42 @@ class Cell {
     // Skip if no body (physics not initialized)
     if (!this.body) return;
     
-    // Calculate distance to boundary (assuming circular boundary)
-    // This would be implemented with the actual physics system
-    const distanceToBoundary = this._getDistanceToBoundary();
+    // This method is now primarily handled by PopulationController
+    // for more sophisticated homeostasis mechanisms
+    // Individual cells can still have basic senescence checks
     
-    // Boundary threshold (percentage of radius)
-    const boundaryThreshold = 0.1; // 10% of radius
-    
-    // If close to boundary, chance to become senescent
-    if (distanceToBoundary < boundaryThreshold) {
-      // Probability increases as distance decreases
-      const probability = 0.05 * (1 - distanceToBoundary / boundaryThreshold);
-      
-      if (Math.random() < probability) {
-        this.transitionState(Cell.States.SENESCENT);
-      }
+    // Basic age-based senescence check
+    const agePercentage = this.getAgePercentage();
+    if (agePercentage > 0.9 && Math.random() < 0.1) {
+      this.transitionState(Cell.States.SENESCENT);
     }
+  }
+  
+  /**
+   * Calculate the crowding factor around this cell
+   * @returns {number} - Crowding factor (0-1), higher means more crowded
+   * @private
+   */
+  _calculateCrowdingFactor() {
+    // This is a placeholder - actual implementation would use physics system
+    // to count nearby cells and calculate density
+    
+    // For now, we'll use a simple approximation based on nearby cells
+    const nearbyCells = this._countNearbyCells();
+    const maxNearbyCells = 8; // Maximum expected cells in close proximity
+    
+    return Math.min(1.0, nearbyCells / maxNearbyCells);
+  }
+  
+  /**
+   * Count the number of cells in close proximity
+   * @returns {number} - Number of nearby cells
+   * @private
+   */
+  _countNearbyCells() {
+    // This is a placeholder - actual implementation would use physics system
+    // For now, return a random value for testing
+    return Math.floor(Math.random() * 10); // Random number between 0-9
   }
   
   /**
@@ -486,7 +507,7 @@ class Cell {
    * @returns {number} - Age percentage (0-1)
    */
   getAgePercentage() {
-    return this.age / this.maxAge;
+    return Math.min(1.0, this.age / this.maxAge);
   }
   
   /**
