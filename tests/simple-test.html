@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Test Page</h1>
+    <p>This page tests if the basic module imports are working.</p>
+    <div id="log"></div>
+
+    <script>
+        // Function to log messages
+        function log(message) {
+            const logElement = document.getElementById('log');
+            logElement.textContent += message + '\n';
+        }
+
+        // Log initial message
+        log('Starting test...');
+
+        // Test ES modules with a simple script
+        window.addEventListener('DOMContentLoaded', () => {
+            log('DOM loaded');
+            
+            // Test dynamic import
+            import('../src/core/Cell.js')
+                .then(module => {
+                    log('Successfully imported Cell.js');
+                    return import('../src/core/Simulation.js');
+                })
+                .then(module => {
+                    log('Successfully imported Simulation.js');
+                    log('All imports successful!');
+                })
+                .catch(error => {
+                    log('Error importing modules: ' + error.message);
+                    console.error(error);
+                });
+        });
+    </script>
+</body>
+</html>
