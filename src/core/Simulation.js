@@ -5,10 +5,12 @@
 import EventEmitter from '../utils/EventEmitter.js';
 import CellLifecycleManager from './CellLifecycleManager.js';
 import StemCellManager from './StemCellManager.js';
+import PopulationController from './PopulationController.js';
 import Cell from './Cell.js';
 import StemCell from './StemCell.js';
 import StatisticsDisplay from '../utils/StatisticsDisplay.js';
 import ParameterManager from '../utils/ParameterManager.js';
+import PopulationTracker from '../utils/PopulationTracker.js';
 
 class Simulation extends EventEmitter {
   /**
@@ -100,6 +102,19 @@ class Simulation extends EventEmitter {
     
     // Set activation threshold from parameters
     this.stemCellManager.setActivationThreshold(this.parameters.activationThreshold);
+    
+    // Initialize population controller
+    this.populationController = new PopulationController({
+      simulation: this,
+      cellManager: this.cellManager,
+      stemCellManager: this.stemCellManager,
+      targetPopulation: this.parameters.maxCells
+    });
+    
+    // Initialize population tracker
+    this.populationTracker = new PopulationTracker({
+      simulation: this
+    });
   }
   
   /**
@@ -280,6 +295,16 @@ class Simulation extends EventEmitter {
       this.parameters.maxCells
     );
     
+    // Update population controller
+    if (this.populationController) {
+      this.populationController.update();
+    }
+    
+    // Update population tracker
+    if (this.populationTracker) {
+      this.populationTracker.update();
+    }
+    
     // Update cage expansion
     this._updateCageExpansion();
     
@@ -306,7 +331,7 @@ class Simulation extends EventEmitter {
   }
   
   /**
-   * Update the cage expansion based on cell population
+   * Update the cage expansion based on cell population and distribution
    * @private
    */
   _updateCageExpansion() {
@@ -317,18 +342,36 @@ class Simulation extends EventEmitter {
     // Base radius plus expansion based on population
     // Square root scaling provides a more natural growth pattern
     const populationRatio = Math.min(1, cellCount / maxCells);
-    const expansionFactor = Math.sqrt(populationRatio);
+    const baseExpansionFactor = Math.sqrt(populationRatio);
+    
+    // Calculate cell pressure on the boundary
+    const cellPressure = this._calculateCellPressure();
+    
+    // Adjust expansion factor based on cell pressure
+    // Higher pressure = faster expansion
+    const pressureAdjustment = cellPressure * 0.3; // Scale the pressure effect
+    const expansionFactor = baseExpansionFactor + pressureAdjustment;
     
     // Calculate target radius with minimum and maximum constraints
     this.targetCageRadius = this.minCageRadius + 
       (this.maxCageRadius - this.minCageRadius) * expansionFactor;
     
-    // Gradually adjust current radius towards target
-    const expansionSpeed = 0.05; // Adjust speed as needed
+    // Dynamic expansion speed based on pressure
+    // Higher pressure = faster expansion
+    const baseExpansionSpeed = 0.05;
+    const expansionSpeed = baseExpansionSpeed * (1 + cellPressure * 2);
+    
+    // Calculate difference between current and target radius
     const difference = this.targetCageRadius - this.cageRadius;
     
+    // Apply resistance when expanding (harder to expand than contract)
+    const adjustedDifference = difference > 0 
+      ? difference * (1 - 0.3 * populationRatio) // Resistance increases with population
+      : difference * 1.2; // Faster contraction when population decreases
+    
     if (Math.abs(difference) > 0.1) {
-      this.cageRadius += difference * expansionSpeed;
+      // Apply the change with dynamic speed
+      this.cageRadius += adjustedDifference * expansionSpeed;
       
       // Ensure radius stays within bounds
       this.cageRadius = Math.max(
@@ -336,9 +379,58 @@ class Simulation extends EventEmitter {
         Math.min(this.maxCageRadius, this.cageRadius)
       );
       
-      // Update physics boundary (would be implemented with physics system)
+      // Update physics boundary
       this._updateBoundaryPhysics();
+      
+      // Emit event with pressure information
+      this.emit('cageExpansion', {
+        radius: this.cageRadius,
+        targetRadius: this.targetCageRadius,
+        cellPressure: cellPressure,
+        populationRatio: populationRatio,
+        time: Date.now()
+      });
     }
+  }
+  
+  /**
+   * Calculate the pressure exerted by cells on the boundary
+   * @returns {number} - Pressure factor (0-1)
+   * @private
+   */
+  _calculateCellPressure() {
+    // Get all cells
+    const cells = this.cellManager.cells;
+    if (cells.length === 0) return 0;
+    
+    // Count cells near the boundary
+    const boundaryThreshold = this.cageRadius * 0.15; // 15% of radius
+    let cellsNearBoundary = 0;
+    
+    cells.forEach(cell => {
+      if (!cell.body) return;
+      
+      // Calculate distance from center
+      const dx = cell.body.position.x - this.cageCenter.x;
+      const dy = cell.body.position.y - this.cageCenter.y;
+      const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+      
+      // Calculate distance from boundary
+      const distanceFromBoundary = this.cageRadius - distanceFromCenter;
+      
+      // Count cells near boundary
+      if (distanceFromBoundary < boundaryThreshold) {
+        // Weight by proximity to boundary (closer = more pressure)
+        const proximityFactor = 1 - (distanceFromBoundary / boundaryThreshold);
+        cellsNearBoundary += proximityFactor;
+      }
+    });
+    
+    // Calculate pressure as ratio of cells near boundary to total cells
+    // Scale to ensure reasonable values
+    const pressureFactor = Math.min(1.0, cellsNearBoundary / (cells.length * 0.3));
+    
+    return pressureFactor;
   }
   
   /**
@@ -1037,54 +1129,254 @@ class Simulation extends EventEmitter {
     const suppressionLevel = this.stemCellManager.getSuppressionLevel();
     const activeClone = this.stemCellManager.getActiveClone();
     
-    // Only render if there's significant suppression
-    if (suppressionLevel > 0.1) {
-      // Create radial gradient from center
-      const gradient = this.ctx.createRadialGradient(
-        this.cageCenter.x, this.cageCenter.y, 0,
-        this.cageCenter.x, this.cageCenter.y, this.cageRadius * 1.2
-      );
-      
-      // Set gradient colors based on active clone and suppression level
-      const alpha = Math.min(0.4, suppressionLevel * 0.5); // Max 40% opacity
-      
-      // Base colors for each clone
-      const cloneColors = {
-        red: `rgba(255, 0, 0, ${alpha})`,
-        green: `rgba(0, 255, 0, ${alpha})`,
-        yellow: `rgba(255, 255, 0, ${alpha})`
-      };
-      
-      // Create gradient
-      gradient.addColorStop(0, cloneColors[activeClone]);
-      gradient.addColorStop(0.7, `rgba(0, 0, 0, ${alpha * 0.5})`);
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      
-      // Draw suppression field
-      this.ctx.beginPath();
-      this.ctx.fillStyle = gradient;
-      this.ctx.arc(
-        this.cageCenter.x, 
-        this.cageCenter.y, 
-        this.cageRadius * 1.2, 
-        0, 
-        Math.PI * 2
-      );
-      this.ctx.fill();
-      
-      // Draw suppression level indicator text
-      this.ctx.font = '14px Arial';
-      this.ctx.fillStyle = 'white';
-      this.ctx.textAlign = 'center';
-      this.ctx.fillText(
-        `Suppression: ${Math.round(suppressionLevel * 100)}%`,
-        this.cageCenter.x,
-        this.cageCenter.y - this.cageRadius - 20
-      );
-    }
+    // Get active stem cells to render individual suppression fields
+    const activeStemCells = this.cellManager.getStemCells().filter(
+      cell => cell.isActive && cell.clone === activeClone
+    );
+    
+    // Render global suppression field
+    this._renderGlobalSuppressionField(suppressionLevel, activeClone);
+    
+    // Render individual suppression fields from active stem cells
+    activeStemCells.forEach(stemCell => {
+      this._renderIndividualSuppressionField(stemCell);
+    });
+    
+    // Render suppression wave effects
+    this._renderSuppressionWaveEffects(suppressionLevel, activeClone);
     
     // Render activation progress for dormant stem cells
     this._renderStemCellActivationProgress();
+    
+    // Render suppression level indicator
+    this._renderSuppressionLevelIndicator(suppressionLevel, activeClone);
+  }
+  
+  /**
+   * Render the global suppression field
+   * @param {number} suppressionLevel - Current suppression level (0-1)
+   * @param {string} activeClone - Active clone identifier
+   * @private
+   */
+  _renderGlobalSuppressionField(suppressionLevel, activeClone) {
+    if (!this.ctx || suppressionLevel <= 0.1) return;
+    
+    // Create radial gradient from center
+    const gradient = this.ctx.createRadialGradient(
+      this.cageCenter.x, this.cageCenter.y, 0,
+      this.cageCenter.x, this.cageCenter.y, this.cageRadius * 1.2
+    );
+    
+    // Set gradient colors based on active clone and suppression level
+    const alpha = Math.min(0.3, suppressionLevel * 0.4); // Max 30% opacity
+    
+    // Base colors for each clone
+    const cloneColors = {
+      red: `rgba(255, 0, 0, ${alpha})`,
+      green: `rgba(0, 255, 0, ${alpha})`,
+      yellow: `rgba(255, 255, 0, ${alpha})`
+    };
+    
+    // Create gradient
+    gradient.addColorStop(0, cloneColors[activeClone]);
+    gradient.addColorStop(0.7, `rgba(0, 0, 0, ${alpha * 0.5})`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    
+    // Draw suppression field
+    this.ctx.beginPath();
+    this.ctx.fillStyle = gradient;
+    this.ctx.arc(
+      this.cageCenter.x, 
+      this.cageCenter.y, 
+      this.cageRadius * 1.2, 
+      0, 
+      Math.PI * 2
+    );
+    this.ctx.fill();
+  }
+  
+  /**
+   * Render individual suppression field from a stem cell
+   * @param {StemCell} stemCell - Active stem cell
+   * @private
+   */
+  _renderIndividualSuppressionField(stemCell) {
+    if (!this.ctx || !stemCell.body) return;
+    
+    const position = stemCell.body.position;
+    const suppressionStrength = stemCell.suppressionStrength;
+    
+    // Skip if suppression strength is too low
+    if (suppressionStrength < 0.1) return;
+    
+    // Calculate field radius based on suppression strength
+    const fieldRadius = 50 + 50 * suppressionStrength;
+    
+    // Create radial gradient for suppression field
+    const gradient = this.ctx.createRadialGradient(
+      position.x, position.y, 0,
+      position.x, position.y, fieldRadius
+    );
+    
+    // Set gradient colors based on clone and suppression strength
+    const alpha = Math.min(0.4, suppressionStrength * 0.5);
+    const cloneColor = this._getCloneColor(stemCell.clone);
+    
+    // Create gradient
+    gradient.addColorStop(0, `rgba(${this._hexToRgb(cloneColor)}, ${alpha})`);
+    gradient.addColorStop(0.7, `rgba(${this._hexToRgb(cloneColor)}, ${alpha * 0.3})`);
+    gradient.addColorStop(1, `rgba(${this._hexToRgb(cloneColor)}, 0)`);
+    
+    // Draw suppression field
+    this.ctx.beginPath();
+    this.ctx.fillStyle = gradient;
+    this.ctx.arc(
+      position.x, 
+      position.y, 
+      fieldRadius, 
+      0, 
+      Math.PI * 2
+    );
+    this.ctx.fill();
+    
+    // Add pulsing effect
+    const pulsePhase = stemCell.pulsePhase || 0;
+    const pulseRadius = fieldRadius * 0.8 + Math.sin(pulsePhase) * 5;
+    const pulseAlpha = (0.1 + 0.1 * Math.sin(pulsePhase)) * suppressionStrength;
+    
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = `rgba(${this._hexToRgb(cloneColor)}, ${pulseAlpha})`;
+    this.ctx.lineWidth = 2;
+    this.ctx.arc(
+      position.x, 
+      position.y, 
+      pulseRadius, 
+      0, 
+      Math.PI * 2
+    );
+    this.ctx.stroke();
+  }
+  
+  /**
+   * Render suppression wave effects
+   * @param {number} suppressionLevel - Current suppression level (0-1)
+   * @param {string} activeClone - Active clone identifier
+   * @private
+   */
+  _renderSuppressionWaveEffects(suppressionLevel, activeClone) {
+    if (!this.ctx || suppressionLevel <= 0.3) return;
+    
+    // Initialize wave effects if not already created
+    if (!this.suppressionWaves) {
+      this.suppressionWaves = [];
+      for (let i = 0; i < 3; i++) {
+        this.suppressionWaves.push({
+          radius: this.cageRadius * (0.3 + Math.random() * 0.3),
+          speed: 0.5 + Math.random() * 0.5,
+          opacity: 0.1 + Math.random() * 0.1
+        });
+      }
+    }
+    
+    // Get clone color
+    const cloneColor = this._getCloneColor(activeClone);
+    
+    // Update and render each wave
+    this.suppressionWaves.forEach(wave => {
+      // Update radius
+      wave.radius += wave.speed;
+      
+      // Reset wave when it gets too large
+      if (wave.radius > this.cageRadius * 1.2) {
+        wave.radius = this.cageRadius * 0.2;
+        wave.speed = 0.5 + Math.random() * 0.5;
+        wave.opacity = 0.1 + Math.random() * 0.1;
+      }
+      
+      // Calculate opacity based on suppression level and wave size
+      const waveOpacity = wave.opacity * suppressionLevel * 
+        (1 - wave.radius / (this.cageRadius * 1.2));
+      
+      // Draw wave
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = `rgba(${this._hexToRgb(cloneColor)}, ${waveOpacity})`;
+      this.ctx.lineWidth = 2;
+      this.ctx.arc(
+        this.cageCenter.x, 
+        this.cageCenter.y, 
+        wave.radius, 
+        0, 
+        Math.PI * 2
+      );
+      this.ctx.stroke();
+    });
+  }
+  
+  /**
+   * Render suppression level indicator
+   * @param {number} suppressionLevel - Current suppression level (0-1)
+   * @param {string} activeClone - Active clone identifier
+   * @private
+   */
+  _renderSuppressionLevelIndicator(suppressionLevel, activeClone) {
+    if (!this.ctx) return;
+    
+    // Draw suppression level indicator text
+    this.ctx.font = '14px Arial';
+    this.ctx.fillStyle = 'white';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText(
+      `Suppression: ${Math.round(suppressionLevel * 100)}%`,
+      this.cageCenter.x,
+      this.cageCenter.y - this.cageRadius - 20
+    );
+    
+    // Draw suppression level bar
+    const barWidth = 100;
+    const barHeight = 8;
+    const barX = this.cageCenter.x - barWidth / 2;
+    const barY = this.cageCenter.y - this.cageRadius - 10;
+    
+    // Draw background
+    this.ctx.fillStyle = 'rgba(50, 50, 50, 0.5)';
+    this.ctx.fillRect(barX, barY, barWidth, barHeight);
+    
+    // Draw filled portion
+    const fillWidth = barWidth * suppressionLevel;
+    this.ctx.fillStyle = this._getCloneColor(activeClone);
+    this.ctx.fillRect(barX, barY, fillWidth, barHeight);
+    
+    // Draw border
+    this.ctx.strokeStyle = 'white';
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+    
+    // Draw activation threshold marker
+    const thresholdX = barX + barWidth * this.stemCellManager.activationThreshold;
+    this.ctx.beginPath();
+    this.ctx.moveTo(thresholdX, barY - 2);
+    this.ctx.lineTo(thresholdX, barY + barHeight + 2);
+    this.ctx.strokeStyle = 'yellow';
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+  }
+  
+  /**
+   * Convert hex color to RGB string
+   * @param {string} hex - Hex color code
+   * @returns {string} - RGB values as "r, g, b" string
+   * @private
+   */
+  _hexToRgb(hex) {
+    // Remove # if present
+    hex = hex.replace('#', '');
+    
+    // Parse hex values
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    return `${r}, ${g}, ${b}`;
   }
   
   /**
@@ -1102,19 +1394,131 @@ class Simulation extends EventEmitter {
       if (!stemCell.isActive && stemCell.getActivationProgress() > 0) {
         const progress = stemCell.getActivationProgress();
         const position = stemCell.body ? stemCell.body.position : { x: 0, y: 0 };
+        const baseRadius = 8; // Base stem cell radius
         
-        // Draw activation progress ring
+        // Draw activation progress ring with dynamic effects
+        const pulsePhase = stemCell.pulsePhase || 0;
+        const ringRadius = baseRadius + 4 + Math.sin(pulsePhase) * 2;
+        const glowIntensity = 0.3 + 0.7 * Math.sin(pulsePhase);
+        
+        // Draw activation progress arc
         this.ctx.beginPath();
         this.ctx.strokeStyle = stemCell.getColor();
         this.ctx.lineWidth = 2;
+        this.ctx.globalAlpha = glowIntensity;
         this.ctx.arc(
           position.x,
           position.y,
-          10, // Radius slightly larger than cell
+          ringRadius,
           0,
           Math.PI * 2 * progress // Arc length based on progress
         );
         this.ctx.stroke();
+        this.ctx.globalAlpha = 1.0;
+        
+        // Draw activation rays when progress is significant
+        if (progress > 0.5) {
+          const rayCount = 8;
+          const rayLength = baseRadius * (0.5 + progress * 0.5);
+          const rayOpacity = progress * glowIntensity;
+          
+          this.ctx.globalAlpha = rayOpacity;
+          this.ctx.strokeStyle = stemCell.getColor();
+          this.ctx.lineWidth = 1;
+          
+          for (let i = 0; i < rayCount; i++) {
+            const angle = (i / rayCount) * Math.PI * 2;
+            const startX = position.x + Math.cos(angle) * ringRadius;
+            const startY = position.y + Math.sin(angle) * ringRadius;
+            const endX = position.x + Math.cos(angle) * (ringRadius + rayLength);
+            const endY = position.y + Math.sin(angle) * (ringRadius + rayLength);
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
+            this.ctx.stroke();
+          }
+          
+          this.ctx.globalAlpha = 1.0;
+        }
+        
+        // Add activation progress text for high progress
+        if (progress > 0.7) {
+          this.ctx.font = '10px Arial';
+          this.ctx.fillStyle = 'white';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(
+            `${Math.round(progress * 100)}%`,
+            position.x,
+            position.y + baseRadius + 12
+          );
+        }
+        
+        // Add activation threshold indicator
+        const activationThreshold = this.stemCellManager.activationThreshold;
+        if (progress > activationThreshold * 0.8 && progress < activationThreshold) {
+          this.ctx.beginPath();
+          this.ctx.strokeStyle = 'yellow';
+          this.ctx.setLineDash([2, 2]);
+          this.ctx.lineWidth = 1;
+          this.ctx.arc(
+            position.x,
+            position.y,
+            ringRadius,
+            0,
+            Math.PI * 2
+          );
+          this.ctx.stroke();
+          this.ctx.setLineDash([]);
+        }
+      }
+      
+      // Add special visual effect for activating stem cells
+      if (stemCell.stemCellState === StemCell.States.ACTIVATING) {
+        const position = stemCell.body ? stemCell.body.position : { x: 0, y: 0 };
+        const baseRadius = 8; // Base stem cell radius
+        
+        // Create pulsing activation glow
+        const pulsePhase = stemCell.pulsePhase || 0;
+        const glowRadius = baseRadius * (2 + Math.sin(pulsePhase) * 0.5);
+        const glowOpacity = 0.2 + 0.3 * Math.sin(pulsePhase);
+        
+        // Draw activation glow
+        const gradient = this.ctx.createRadialGradient(
+          position.x, position.y, baseRadius,
+          position.x, position.y, glowRadius
+        );
+        
+        const cloneColor = this._getCloneColor(stemCell.clone);
+        gradient.addColorStop(0, `rgba(${this._hexToRgb(cloneColor)}, ${glowOpacity})`);
+        gradient.addColorStop(1, `rgba(${this._hexToRgb(cloneColor)}, 0)`);
+        
+        this.ctx.beginPath();
+        this.ctx.fillStyle = gradient;
+        this.ctx.arc(position.x, position.y, glowRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Draw activation particles
+        const particleCount = 5;
+        const particleSize = 2;
+        const particleDistance = baseRadius * 2;
+        
+        this.ctx.fillStyle = cloneColor;
+        
+        for (let i = 0; i < particleCount; i++) {
+          const angle = pulsePhase + (i / particleCount) * Math.PI * 2;
+          const distance = particleDistance * (0.7 + 0.3 * Math.sin(pulsePhase + i));
+          const x = position.x + Math.cos(angle) * distance;
+          const y = position.y + Math.sin(angle) * distance;
+          
+          this.ctx.beginPath();
+          this.ctx.globalAlpha = glowOpacity;
+          this.ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        
+        this.ctx.globalAlpha = 1.0;
       }
     });
   }
@@ -1169,3 +1573,312 @@ class Simulation extends EventEmitter {
 
 // Export the Simulation class
 export default Simulation;
+        
+        // Draw activation progress ring with dynamic effects
+        const pulsePhase = stemCell.pulsePhase || 0;
+        const ringRadius = baseRadius + 4 + Math.sin(pulsePhase) * 2;
+        const glowIntensity = 0.3 + 0.7 * Math.sin(pulsePhase);
+        
+        // Draw activation progress arc
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = stemCell.getColor();
+        this.ctx.lineWidth = 2;
+        this.ctx.globalAlpha = glowIntensity;
+        this.ctx.arc(
+          position.x,
+          position.y,
+          ringRadius,
+          0,
+          Math.PI * 2 * progress // Arc length based on progress
+        );
+        this.ctx.stroke();
+        this.ctx.globalAlpha = 1.0;
+        
+        // Draw activation rays when progress is significant
+        if (progress > 0.5) {
+          const rayCount = 8;
+          const rayLength = baseRadius * (0.5 + progress * 0.5);
+          const rayOpacity = progress * glowIntensity;
+          
+          this.ctx.globalAlpha = rayOpacity;
+          this.ctx.strokeStyle = stemCell.getColor();
+          this.ctx.lineWidth = 1;
+          
+          for (let i = 0; i < rayCount; i++) {
+            const angle = (i / rayCount) * Math.PI * 2;
+            const startX = position.x + Math.cos(angle) * ringRadius;
+            const startY = position.y + Math.sin(angle) * ringRadius;
+            const endX = position.x + Math.cos(angle) * (ringRadius + rayLength);
+            const endY = position.y + Math.sin(angle) * (ringRadius + rayLength);
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
+            this.ctx.stroke();
+          }
+          
+          this.ctx.globalAlpha = 1.0;
+        }
+        
+        // Add activation progress text for high progress
+        if (progress > 0.7) {
+          this.ctx.font = '10px Arial';
+          this.ctx.fillStyle = 'white';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(
+            `${Math.round(progress * 100)}%`,
+            position.x,
+            position.y + baseRadius + 12
+          );
+        }
+        
+        // Add activation threshold indicator
+        const activationThreshold = this.stemCellManager.activationThreshold;
+        if (progress > activationThreshold * 0.8 && progress < activationThreshold) {
+          this.ctx.beginPath();
+          this.ctx.strokeStyle = 'yellow';
+          this.ctx.setLineDash([2, 2]);
+          this.ctx.lineWidth = 1;
+          this.ctx.arc(
+            position.x,
+            position.y,
+            ringRadius,
+            0,
+            Math.PI * 2
+          );
+          this.ctx.stroke();
+          this.ctx.setLineDash([]);
+        }
+      }
+      
+      // Add special visual effect for activating stem cells
+      if (stemCell.stemCellState === StemCell.States.ACTIVATING) {
+        const position = stemCell.body ? stemCell.body.position : { x: 0, y: 0 };
+        const baseRadius = 8; // Base stem cell radius
+        
+        // Create pulsing activation glow
+        const pulsePhase = stemCell.pulsePhase || 0;
+        const glowRadius = baseRadius * (2 + Math.sin(pulsePhase) * 0.5);
+        const glowOpacity = 0.2 + 0.3 * Math.sin(pulsePhase);
+        
+        // Draw activation glow
+        const gradient = this.ctx.createRadialGradient(
+          position.x, position.y, baseRadius,
+          position.x, position.y, glowRadius
+        );
+        
+        const cloneColor = this._getCloneColor(stemCell.clone);
+        gradient.addColorStop(0, `rgba(${this._hexToRgb(cloneColor)}, ${glowOpacity})`);
+        gradient.addColorStop(1, `rgba(${this._hexToRgb(cloneColor)}, 0)`);
+        
+        this.ctx.beginPath();
+        this.ctx.fillStyle = gradient;
+        this.ctx.arc(position.x, position.y, glowRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Draw activation particles
+        const particleCount = 5;
+        const particleSize = 2;
+        const particleDistance = baseRadius * 2;
+        
+        this.ctx.fillStyle = cloneColor;
+        
+        for (let i = 0; i < particleCount; i++) {
+          const angle = pulsePhase + (i / particleCount) * Math.PI * 2;
+          const distance = particleDistance * (0.7 + 0.3 * Math.sin(pulsePhase + i));
+          const x = position.x + Math.cos(angle) * distance;
+          const y = position.y + Math.sin(angle) * distance;
+          
+          this.ctx.beginPath();
+          this.ctx.globalAlpha = glowOpacity;
+          this.ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        
+        this.ctx.globalAlpha = 1.0;
+      }
+    });
+  }
+  
+  /**
+   * Create visual effects for a succession event
+   * @param {Object} details - Succession event details
+   */
+  createSuccessionEventEffects(details) {
+    // Store succession event visual effects
+    if (!this.successionEffects) {
+      this.successionEffects = [];
+    }
+    
+    // Create new effect
+    const effect = {
+      time: 0,
+      duration: 60, // 1 second at 60fps
+      oldClone: details.oldClone,
+      newClone: details.newClone,
+      center: { ...this.cageCenter },
+      rings: [],
+      particles: []
+    };
+    
+    // Create expanding rings
+    for (let i = 0; i < 3; i++) {
+      effect.rings.push({
+        radius: 10,
+        maxRadius: this.cageRadius * 1.2,
+        speed: 3 + i * 2,
+        opacity: 0.8 - i * 0.2,
+        delay: i * 10
+      });
+    }
+    
+    // Create particles
+    const particleCount = 30;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const distance = 20 + Math.random() * 30;
+      const speed = 1 + Math.random() * 2;
+      
+      effect.particles.push({
+        x: effect.center.x + Math.cos(angle) * distance,
+        y: effect.center.y + Math.sin(angle) * distance,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 2 + Math.random() * 3,
+        opacity: 0.8 + Math.random() * 0.2,
+        decay: 0.95 + Math.random() * 0.03
+      });
+    }
+    
+    // Add effect to list
+    this.successionEffects.push(effect);
+    
+    // Set up event listeners for the simulation
+    if (!this._successionEventListenerSet) {
+      this._successionEventListenerSet = true;
+      this.on('successionEvent', this.createSuccessionEventEffects.bind(this));
+    }
+  }
+  
+  /**
+   * Render succession event effects
+   * @private
+   */
+  _renderSuccessionEffects() {
+    if (!this.ctx || !this.successionEffects || this.successionEffects.length === 0) return;
+    
+    // Process each effect
+    for (let i = this.successionEffects.length - 1; i >= 0; i--) {
+      const effect = this.successionEffects[i];
+      
+      // Update effect time
+      effect.time++;
+      
+      // Get colors for old and new clones
+      const oldCloneColor = this._getCloneColor(effect.oldClone);
+      const newCloneColor = this._getCloneColor(effect.newClone);
+      
+      // Render rings
+      effect.rings.forEach(ring => {
+        // Skip if ring is delayed
+        if (effect.time < ring.delay) return;
+        
+        // Update ring radius
+        ring.radius += ring.speed;
+        
+        // Calculate opacity based on radius and time
+        const radiusRatio = ring.radius / ring.maxRadius;
+        const timeRatio = effect.time / effect.duration;
+        const opacity = ring.opacity * (1 - Math.max(radiusRatio, timeRatio));
+        
+        // Skip if fully transparent
+        if (opacity <= 0) return;
+        
+        // Draw ring with gradient from old to new clone color
+        const gradient = this.ctx.createRadialGradient(
+          effect.center.x, effect.center.y, ring.radius - 5,
+          effect.center.x, effect.center.y, ring.radius + 5
+        );
+        
+        gradient.addColorStop(0, `rgba(${this._hexToRgb(oldCloneColor)}, ${opacity})`);
+        gradient.addColorStop(0.5, `rgba(255, 255, 255, ${opacity * 1.5})`);
+        gradient.addColorStop(1, `rgba(${this._hexToRgb(newCloneColor)}, ${opacity})`);
+        
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = gradient;
+        this.ctx.lineWidth = 3;
+        this.ctx.arc(
+          effect.center.x,
+          effect.center.y,
+          ring.radius,
+          0,
+          Math.PI * 2
+        );
+        this.ctx.stroke();
+      });
+      
+      // Render particles
+      effect.particles.forEach(particle => {
+        // Update particle position
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        
+        // Update particle opacity
+        particle.opacity *= particle.decay;
+        
+        // Skip if fully transparent
+        if (particle.opacity <= 0.05) return;
+        
+        // Draw particle
+        this.ctx.beginPath();
+        this.ctx.fillStyle = newCloneColor;
+        this.ctx.globalAlpha = particle.opacity;
+        this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.globalAlpha = 1.0;
+      });
+      
+      // Remove effect if complete
+      if (effect.time >= effect.duration) {
+        this.successionEffects.splice(i, 1);
+      }
+    }
+  }
+  
+  /**
+   * Render the suppression field
+   * @private
+   */
+  _renderSuppressionField() {
+    if (!this.ctx) return;
+    
+    // Get suppression level from stem cell manager
+    const suppressionLevel = this.stemCellManager.getSuppressionLevel();
+    const activeClone = this.stemCellManager.getActiveClone();
+    
+    // Get active stem cells to render individual suppression fields
+    const activeStemCells = this.cellManager.getStemCells().filter(
+      cell => cell.isActive && cell.clone === activeClone
+    );
+    
+    // Render global suppression field
+    this._renderGlobalSuppressionField(suppressionLevel, activeClone);
+    
+    // Render individual suppression fields from active stem cells
+    activeStemCells.forEach(stemCell => {
+      this._renderIndividualSuppressionField(stemCell);
+    });
+    
+    // Render suppression wave effects
+    this._renderSuppressionWaveEffects(suppressionLevel, activeClone);
+    
+    // Render succession event effects
+    this._renderSuccessionEffects();
+    
+    // Render activation progress for dormant stem cells
+    this._renderStemCellActivationProgress();
+    
+    // Render suppression level indicator
+    this._renderSuppressionLevelIndicator(suppressionLevel, activeClone);
+  }
