@@ -3,6 +3,7 @@
  * Manages stem cell activation, suppression, and clonal succession
  */
 import StemCell from './StemCell.js';
+import Cell from './Cell.js';
 
 class StemCellManager {
   /**
@@ -227,7 +228,7 @@ class StemCellManager {
     }
     
     // Count cells by state
-    const senescentCells = cells.filter(cell => cell.state === 'senescent');
+    const senescentCells = cells.filter(cell => cell.state === Cell.States.SENESCENT);
     const totalCells = cells.length;
     const cloneCounts = this._countCellsByClone(cells);
     const activeCloneCount = cloneCounts[this.activeClone];
@@ -241,6 +242,10 @@ class StemCellManager {
     // Check if population is declining significantly
     const isHighSenescence = senescentCells.length > totalCells * 0.6;
     const isPopulationDeclining = totalCells < maxCells * 0.7 && activeCloneCount < maxCells * 0.4;
+    
+    // Check if active stem cells are depleted
+    const activeStemCells = this.stemCells[this.activeClone].cells.filter(cell => cell.isActive);
+    const areActiveStemCellsDepleted = activeStemCells.every(cell => cell.stemCellState === StemCell.States.DEPLETED);
     
     // Check if suppression is low enough for activation
     const isSuppressionLow = this.suppressionLevel < this.activationThreshold;

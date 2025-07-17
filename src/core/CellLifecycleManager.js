@@ -2,6 +2,8 @@
  * CellLifecycleManager class
  * Manages the lifecycle of cells including creation, division, state transitions, and death
  */
+import Cell from './Cell.js';
+
 class CellLifecycleManager {
   /**
    * Create a new cell lifecycle manager
@@ -88,6 +90,11 @@ class CellLifecycleManager {
       
       // Check for boundary-induced senescence
       cell.checkSenescence();
+      
+      // Update visual appearance if needed
+      if (cell._updateAppearance) {
+        cell._updateAppearance();
+      }
     });
     
     // Update constraints
@@ -151,7 +158,7 @@ class CellLifecycleManager {
     }
     
     // Adjust based on cell state
-    if (cell.state !== 'dividing') {
+    if (cell.state !== Cell.States.DIVIDING) {
       probability = 0; // Non-dividing cells can't divide
     }
     
@@ -176,7 +183,7 @@ class CellLifecycleManager {
    */
   _divideCell(parentCell) {
     // Check if cell can divide
-    if (!parentCell.canDivide || parentCell.state !== 'dividing') {
+    if (!parentCell.canDivide || parentCell.state !== Cell.States.DIVIDING) {
       return null;
     }
     
@@ -184,6 +191,9 @@ class CellLifecycleManager {
     parentCell.divisionCooldown = 60; // 1 second at 60fps
     parentCell.canDivide = false;
     parentCell.isDividing = true;
+    
+    // Increment division count on parent
+    parentCell.divisionCount = (parentCell.divisionCount || 0) + 1;
     
     // Calculate position for new cell (slightly offset from parent)
     const angle = Math.random() * Math.PI * 2;
@@ -198,11 +208,31 @@ class CellLifecycleManager {
       const CellClass = parentCell.constructor.prototype.constructor;
       childCell = new CellClass(childX, childY, parentCell.clone, parentCell.population);
       childCell.isStemCell = false; // Ensure it's not a stem cell
+      
+      // Inherit properties from stem cell parent
+      childCell.divisionsLeft = Math.max(0, parentCell.divisionsLeft - 5); // Fewer divisions for cells from stem cells
+      
+      // Inherit some genetic properties (like resistance to senescence)
+      childCell.senescenceThreshold = parentCell.senescenceThreshold;
+      childCell.divisionThreshold = parentCell.divisionThreshold;
     } else {
       // Create regular cell from regular cell
       const CellClass = parentCell.constructor;
       childCell = new CellClass(childX, childY, parentCell.clone, parentCell.population);
+      
+      // Inherit properties from parent
+      childCell.divisionsLeft = Math.max(0, parentCell.divisionsLeft - 1);
+      
+      // Inherit state transition thresholds with slight variation
+      childCell.senescenceThreshold = parentCell.senescenceThreshold * (0.95 + Math.random() * 0.1); // ±5% variation
+      childCell.divisionThreshold = parentCell.divisionThreshold * (0.95 + Math.random() * 0.1); // ±5% variation
+      
+      // Inherit max age with slight variation
+      childCell.maxAge = parentCell.maxAge * (0.9 + Math.random() * 0.2); // ±10% variation
     }
+    
+    // Create division visual effects
+    this._createDivisionVisualEffects(parentCell, childCell);
     
     // Create temporary constraint between parent and child
     this._createDivisionConstraint(parentCell, childCell);
@@ -211,12 +241,42 @@ class CellLifecycleManager {
     this.onCellDivided(parentCell, childCell);
     
     // Reset division flag after short delay
-    setTimeout(() => {
+    parentCell._divisionResetTimeout = setTimeout(() => {
       parentCell.isDividing = false;
       parentCell.canDivide = true;
     }, 500);
     
     return childCell;
+  }
+  
+  /**
+   * Create visual effects for cell division
+   * @param {Cell} parentCell - The parent cell
+   * @param {Cell} childCell - The newly created child cell
+   * @private
+   */
+  _createDivisionVisualEffects(parentCell, childCell) {
+    // Set division visual effect properties on both cells
+    parentCell.divisionEffectTime = 0;
+    parentCell.divisionEffectDuration = 20; // 0.33 seconds at 60fps
+    parentCell.divisionPartner = childCell;
+    
+    childCell.divisionEffectTime = 0;
+    childCell.divisionEffectDuration = 20;
+    childCell.divisionPartner = parentCell;
+    childCell.isNewborn = true;
+    
+    // Create division effect properties for renderer
+    const divisionEffectProps = {
+      active: true,
+      duration: 20,
+      connectionOpacity: 1.0,
+      glowIntensity: 1.0,
+      pulseSize: 1.0
+    };
+    
+    parentCell.divisionEffectProperties = { ...divisionEffectProps };
+    childCell.divisionEffectProperties = { ...divisionEffectProps };
   }
   
   /**
@@ -270,18 +330,25 @@ class CellLifecycleManager {
   /**
    * Handle cell death process
    * @param {Cell} cell - The cell that is dying
+   * @param {string} cause - Cause of death (default: 'age')
    * @private
    */
-  _handleCellDeath(cell) {
+  _handleCellDeath(cell, cause = 'age') {
+    // Skip if cell is already dying
+    if (cell.isDying) return;
+    
+    // Prepare cell for death with visual effects
+    const deathEvent = cell.prepareForDeath(cause);
+    
     // Track death statistics
     this.deathCount++;
     
     // Track deaths by state
-    if (cell.state === 'dividing') {
+    if (cell.state === Cell.States.DIVIDING) {
       this.deathsByState.dividing++;
-    } else if (cell.state === 'non-dividing') {
+    } else if (cell.state === Cell.States.NON_DIVIDING) {
       this.deathsByState.nonDividing++;
-    } else if (cell.state === 'senescent') {
+    } else if (cell.state === Cell.States.SENESCENT) {
       this.deathsByState.senescent++;
     }
     
@@ -290,8 +357,83 @@ class CellLifecycleManager {
       this.deathsByClone[cell.clone]++;
     }
     
-    // Remove the cell
-    this.removeCell(cell);
+    // Add death event to history
+    if (!this.deathEvents) {
+      this.deathEvents = [];
+    }
+    this.deathEvents.push(deathEvent);
+    
+    // Keep death events history at a reasonable size
+    if (this.deathEvents.length > 100) {
+      this.deathEvents.shift();
+    }
+    
+    // Schedule cell removal after death animation completes
+    setTimeout(() => {
+      this.removeCell(cell);
+    }, 500); // 0.5 seconds for death animation
+    
+    // Emit death signals to nearby cells
+    this._emitDeathSignals(cell, cause);
+    
+    // Notify of cell death with cause
+    this.onCellDied(cell, cause);
+  }
+  
+  /**
+   * Emit death signals to nearby cells
+   * @param {Cell} dyingCell - The cell that is dying
+   * @param {string} cause - Cause of death
+   * @private
+   */
+  _emitDeathSignals(dyingCell, cause) {
+    // Skip if no body (physics not initialized)
+    if (!dyingCell.body) return;
+    
+    const position = dyingCell.body.position;
+    const signalRadius = 30; // Radius for death signal
+    
+    // Find cells within signal radius
+    const nearbyCells = this.cells.filter(cell => {
+      if (!cell.body || cell === dyingCell) return false;
+      
+      const dx = cell.body.position.x - position.x;
+      const dy = cell.body.position.y - position.y;
+      const distanceSquared = dx * dx + dy * dy;
+      
+      return distanceSquared < signalRadius * signalRadius;
+    });
+    
+    // Apply effects based on death cause
+    nearbyCells.forEach(cell => {
+      // Different effects based on cause of death
+      switch (cause) {
+        case 'age':
+          // Age death has minimal effect on neighbors
+          break;
+          
+        case 'boundary':
+          // Boundary deaths increase chance of senescence in neighbors
+          if (Math.random() < 0.2 && cell.state === Cell.States.DIVIDING) {
+            cell.transitionState(Cell.States.NON_DIVIDING);
+          }
+          break;
+          
+        case 'resource':
+          // Resource competition deaths affect division probability
+          cell.divisionCooldown = Math.max(cell.divisionCooldown, 30);
+          break;
+      }
+      
+      // Visual effect on nearby cells
+      cell.nearbyDeathEffect = {
+        active: true,
+        time: 0,
+        duration: 15,
+        intensity: 0.5,
+        source: position
+      };
+    });
   }
   
   /**
@@ -307,9 +449,9 @@ class CellLifecycleManager {
     
     // Track cells by state
     const stateCounts = {
-      dividing: this.cells.filter(cell => cell.state === 'dividing').length,
-      nonDividing: this.cells.filter(cell => cell.state === 'non-dividing').length,
-      senescent: this.cells.filter(cell => cell.state === 'senescent').length
+      dividing: this.cells.filter(cell => cell.state === Cell.States.DIVIDING).length,
+      nonDividing: this.cells.filter(cell => cell.state === Cell.States.NON_DIVIDING).length,
+      senescent: this.cells.filter(cell => cell.state === Cell.States.SENESCENT).length
     };
     
     Object.keys(stateCounts).forEach(state => {

@@ -83,7 +83,7 @@ class Simulation extends EventEmitter {
         this.emit('cellDied', cell);
         
         // If this was a senescent cell, signal the stem cell manager
-        if (cell.state === 'senescent') {
+        if (cell.state === Cell.States.SENESCENT) {
           this.stemCellManager.recordDyingCellSignal();
         }
       }
@@ -473,32 +473,183 @@ class Simulation extends EventEmitter {
     // Get all cells
     const cells = this.cellManager.cells;
     
+    // First render division connections between cells
+    this._renderDivisionConnections(cells);
+    
     // Render cells
     cells.forEach(cell => {
       const position = cell.body ? cell.body.position : { x: 0, y: 0 };
-      const radius = cell.isStemCell ? 8 : 6; // Stem cells are slightly larger
+      let baseRadius = cell.isStemCell ? 8 : 6; // Stem cells are slightly larger
+      
+      // Apply state-specific size adjustments if available
+      if (cell.visualProperties && cell.visualProperties.sizeMultiplier) {
+        baseRadius *= cell.visualProperties.sizeMultiplier;
+      }
+      
+      // Apply death effect size adjustments if dying
+      if (cell.isDying && cell.deathEffectProperties) {
+        baseRadius *= cell.deathEffectProperties.scale;
+      }
       
       // Get cell color based on clone and state
       const color = cell.getColor();
       
-      // Draw cell body
+      // Apply opacity if available
+      let opacity = cell.visualProperties && cell.visualProperties.opacity !== undefined ? 
+        cell.visualProperties.opacity : 1.0;
+        
+      // Apply death effect opacity if dying
+      if (cell.isDying && cell.deathEffectProperties) {
+        opacity *= cell.deathEffectProperties.opacity;
+      }
+      
+      // Draw death effect particles if cell is dying
+      if (cell.isDying && cell.deathEffectProperties) {
+        this._renderDeathEffectParticles(cell, position, baseRadius, color);
+      }
+      
+      // Draw cell glow effect for state transitions
+      if (cell.stateTransitionEffect && cell.visualProperties && cell.visualProperties.glowColor) {
+        const glowRadius = baseRadius * 1.5;
+        const glowColor = cell.visualProperties.glowColor;
+        const glowIntensity = cell.visualProperties.glowIntensity || 0.5;
+        
+        // Create radial gradient for glow
+        const gradient = this.ctx.createRadialGradient(
+          position.x, position.y, baseRadius,
+          position.x, position.y, glowRadius
+        );
+        
+        gradient.addColorStop(0, `${glowColor}${Math.floor(glowIntensity * 99).toString(16).padStart(2, '0')}`);
+        gradient.addColorStop(1, `${glowColor}00`);
+        
+        // Draw glow
+        this.ctx.beginPath();
+        this.ctx.fillStyle = gradient;
+        this.ctx.arc(position.x, position.y, glowRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+      
+      // Draw division effect glow if cell is dividing
+      if (cell.divisionEffectProperties && cell.divisionEffectProperties.active) {
+        const glowRadius = baseRadius * 2;
+        const glowColor = this._getCloneColor(cell.clone);
+        const glowIntensity = cell.divisionEffectProperties.glowIntensity || 0.5;
+        
+        // Create radial gradient for division glow
+        const gradient = this.ctx.createRadialGradient(
+          position.x, position.y, baseRadius,
+          position.x, position.y, glowRadius
+        );
+        
+        gradient.addColorStop(0, `${glowColor}${Math.floor(glowIntensity * 99).toString(16).padStart(2, '0')}`);
+        gradient.addColorStop(1, `${glowColor}00`);
+        
+        // Draw division glow
+        this.ctx.beginPath();
+        this.ctx.fillStyle = gradient;
+        this.ctx.arc(position.x, position.y, glowRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Update division effect time
+        cell.divisionEffectTime = (cell.divisionEffectTime || 0) + 1;
+        if (cell.divisionEffectTime >= cell.divisionEffectDuration) {
+          cell.divisionEffectProperties.active = false;
+        } else {
+          // Update division effect properties based on time
+          const progress = cell.divisionEffectTime / cell.divisionEffectDuration;
+          cell.divisionEffectProperties.glowIntensity = 1.0 - progress;
+          cell.divisionEffectProperties.connectionOpacity = 1.0 - progress;
+        }
+      }
+      
+      // Draw cell body with opacity
       this.ctx.beginPath();
       this.ctx.fillStyle = color;
-      this.ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
-      this.ctx.fill();
+      this.ctx.globalAlpha = opacity;
       
-      // Add border for stem cells
-      if (cell.isStemCell) {
+      // Apply rotation for dying cells
+      if (cell.isDying && cell.deathEffectProperties && cell.deathEffectProperties.rotation) {
+        this.ctx.save();
+        this.ctx.translate(position.x, position.y);
+        this.ctx.rotate(cell.deathEffectProperties.rotation);
         this.ctx.beginPath();
-        this.ctx.strokeStyle = cell.isActive ? '#ffffff' : '#888888';
-        this.ctx.lineWidth = 2;
-        this.ctx.arc(position.x, position.y, radius + 1, 0, Math.PI * 2);
-        this.ctx.stroke();
+        this.ctx.arc(0, 0, baseRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.restore();
+      } else {
+        this.ctx.arc(position.x, position.y, baseRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+      
+      this.ctx.globalAlpha = 1.0; // Reset opacity
+      
+      // Add border based on cell state
+      const borderProps = cell.visualProperties || {
+        borderColor: cell.isStemCell ? '#ffffff' : '#888888',
+        borderWidth: cell.isStemCell ? 2 : 1
+      };
+      
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = borderProps.borderColor;
+      this.ctx.lineWidth = borderProps.borderWidth;
+      this.ctx.globalAlpha = opacity; // Apply same opacity to border
+      this.ctx.arc(position.x, position.y, baseRadius + borderProps.borderWidth/2, 0, Math.PI * 2);
+      this.ctx.stroke();
+      this.ctx.globalAlpha = 1.0; // Reset opacity
+      
+      // Draw state-specific patterns
+      if (cell.visualProperties && cell.visualProperties.pattern) {
+        this._drawCellPattern(
+          position.x, 
+          position.y, 
+          baseRadius, 
+          cell.visualProperties.pattern
+        );
+      }
+      
+      // Add stem cell specific indicators
+      if (cell.isStemCell) {
+        const stemCell = cell; // For clarity in the code
+        
+        // Draw stem cell halo/glow if present
+        if (stemCell.haloSize > 0 && stemCell.haloOpacity > 0) {
+          const gradient = this.ctx.createRadialGradient(
+            position.x, position.y, baseRadius,
+            position.x, position.y, baseRadius + stemCell.haloSize
+          );
+          
+          gradient.addColorStop(0, `${stemCell.glowColor}${Math.floor(stemCell.haloOpacity * 255).toString(16).padStart(2, '0')}`);
+          gradient.addColorStop(1, `${stemCell.glowColor}00`);
+          
+          this.ctx.beginPath();
+          this.ctx.fillStyle = gradient;
+          this.ctx.arc(position.x, position.y, baseRadius + stemCell.haloSize, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        
+        // Draw suppression field for active stem cells
+        if (stemCell.suppressionFieldRadius > 0 && stemCell.suppressionFieldOpacity > 0) {
+          const fieldGradient = this.ctx.createRadialGradient(
+            position.x, position.y, baseRadius,
+            position.x, position.y, stemCell.suppressionFieldRadius
+          );
+          
+          const cloneColor = stemCell.glowColor;
+          fieldGradient.addColorStop(0, `${cloneColor}${Math.floor(stemCell.suppressionFieldOpacity * 255).toString(16).padStart(2, '0')}`);
+          fieldGradient.addColorStop(0.7, `${cloneColor}${Math.floor(stemCell.suppressionFieldOpacity * 0.3 * 255).toString(16).padStart(2, '0')}`);
+          fieldGradient.addColorStop(1, `${cloneColor}00`);
+          
+          this.ctx.beginPath();
+          this.ctx.fillStyle = fieldGradient;
+          this.ctx.arc(position.x, position.y, stemCell.suppressionFieldRadius, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
         
         // Add divisions left indicator for active stem cells
-        if (cell.isActive) {
-          const divisionsLeft = cell.getDivisionsLeft();
-          const divisionsTotal = 25; // Maximum divisions
+        if (stemCell.isActive) {
+          const divisionsLeft = stemCell.getDivisionsLeft();
+          const divisionsTotal = stemCell.maxDivisions;
           const divisionsRatio = divisionsLeft / divisionsTotal;
           
           // Draw divisions indicator as arc
@@ -508,11 +659,45 @@ class Simulation extends EventEmitter {
           this.ctx.arc(
             position.x,
             position.y,
-            radius + 3,
+            baseRadius + 3,
             0,
             Math.PI * 2 * divisionsRatio
           );
           this.ctx.stroke();
+        }
+        
+        // Add activation progress indicator for activating stem cells
+        if (stemCell.stemCellState === StemCell.States.ACTIVATING) {
+          const progress = stemCell.getActivationProgress();
+          
+          // Draw activation progress as pulsing ring
+          this.ctx.beginPath();
+          this.ctx.strokeStyle = stemCell.glowColor;
+          this.ctx.lineWidth = 2;
+          this.ctx.globalAlpha = 0.3 + 0.7 * Math.sin(stemCell.pulsePhase);
+          this.ctx.arc(
+            position.x,
+            position.y,
+            baseRadius + 4 + Math.sin(stemCell.pulsePhase) * 2,
+            0,
+            Math.PI * 2 * progress
+          );
+          this.ctx.stroke();
+          this.ctx.globalAlpha = 1.0;
+        }
+        
+        // Add visual indicator for stem cell state
+        const stateIndicator = this._getStemCellStateIndicator(stemCell);
+        if (stateIndicator.symbol) {
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = `${Math.round(baseRadius * 0.8)}px Arial`;
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(
+            stateIndicator.symbol,
+            position.x,
+            position.y
+          );
         }
       }
       
@@ -521,14 +706,14 @@ class Simulation extends EventEmitter {
         this.ctx.beginPath();
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1;
-        this.ctx.arc(position.x, position.y, radius * 1.5, 0, Math.PI * 2);
+        this.ctx.arc(position.x, position.y, baseRadius * 1.5, 0, Math.PI * 2);
         this.ctx.stroke();
       }
       
       // Add visual indicator for senescent cells
-      if (cell.state === 'senescent') {
+      if (cell.state === Cell.States.SENESCENT) {
         // Draw X mark
-        const xSize = radius * 0.7;
+        const xSize = baseRadius * 0.7;
         this.ctx.beginPath();
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1;
@@ -544,10 +729,249 @@ class Simulation extends EventEmitter {
         this.ctx.beginPath();
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1;
-        this.ctx.arc(position.x, position.y, radius * 1.2, 0, Math.PI * 2);
+        this.ctx.arc(position.x, position.y, baseRadius * 1.2, 0, Math.PI * 2);
         this.ctx.stroke();
       }
+      
+      // Add age indicator (only for non-stem cells)
+      if (!cell.isStemCell) {
+        const agePercentage = cell.getAgePercentage();
+        const ageIndicatorRadius = baseRadius * 0.4;
+        const ageIndicatorColor = this._getAgeIndicatorColor(agePercentage);
+        
+        // Draw small circle indicating age
+        this.ctx.beginPath();
+        this.ctx.fillStyle = ageIndicatorColor;
+        this.ctx.globalAlpha = opacity; // Apply same opacity to age indicator
+        this.ctx.arc(
+          position.x + baseRadius * 0.5, 
+          position.y - baseRadius * 0.5, 
+          ageIndicatorRadius, 
+          0, 
+          Math.PI * 2
+        );
+        this.ctx.fill();
+        this.ctx.globalAlpha = 1.0; // Reset opacity
+      }
+      
+      // Update death effect if cell is dying
+      if (cell.isDying) {
+        const deathEffectComplete = cell.updateDeathEffect();
+        // Note: The cell will be removed by the CellLifecycleManager after the death effect completes
+      }
     });
+  }
+  
+  /**
+   * Render division connections between cells
+   * @param {Array} cells - All cells to render
+   * @private
+   */
+  _renderDivisionConnections(cells) {
+    if (!this.ctx) return;
+    
+    // Find cells with active division effects
+    const dividingCells = cells.filter(cell => 
+      cell.divisionEffectProperties && 
+      cell.divisionEffectProperties.active && 
+      cell.divisionPartner
+    );
+    
+    // Render division connections
+    dividingCells.forEach(cell => {
+      const partner = cell.divisionPartner;
+      
+      // Skip if partner is not found (might have been removed)
+      if (!partner || !partner.body) return;
+      
+      const startPos = cell.body ? cell.body.position : { x: 0, y: 0 };
+      const endPos = partner.body ? partner.body.position : { x: 0, y: 0 };
+      
+      // Calculate connection properties based on effect progress
+      const progress = cell.divisionEffectTime / cell.divisionEffectDuration;
+      const opacity = cell.divisionEffectProperties.connectionOpacity * (1 - progress);
+      const width = 3 * (1 - progress);
+      
+      // Draw connection line
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+      this.ctx.lineWidth = width;
+      this.ctx.moveTo(startPos.x, startPos.y);
+      this.ctx.lineTo(endPos.x, endPos.y);
+      this.ctx.stroke();
+      
+      // Draw pulsing circles at midpoint
+      const midX = (startPos.x + endPos.x) / 2;
+      const midY = (startPos.y + endPos.y) / 2;
+      const pulseSize = 5 * (1 - progress);
+      
+      this.ctx.beginPath();
+      this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.7})`;
+      this.ctx.arc(midX, midY, pulseSize, 0, Math.PI * 2);
+      this.ctx.fill();
+    });
+  }
+  
+  /**
+   * Render death effect particles for a dying cell
+   * @param {Cell} cell - The dying cell
+   * @param {Object} position - Cell position
+   * @param {number} baseRadius - Cell base radius
+   * @param {string} color - Cell color
+   * @private
+   */
+  _renderDeathEffectParticles(cell, position, baseRadius, color) {
+    if (!this.ctx || !cell.deathEffectProperties) return;
+    
+    const props = cell.deathEffectProperties;
+    const particleCount = props.particleCount;
+    const particleSize = props.particleSize;
+    const particleSpread = props.particleSpread;
+    
+    // Generate random particles around the dying cell
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * particleSpread;
+      const x = position.x + Math.cos(angle) * distance;
+      const y = position.y + Math.sin(angle) * distance;
+      
+      // Draw particle
+      this.ctx.beginPath();
+      this.ctx.fillStyle = color;
+      this.ctx.globalAlpha = props.opacity * 0.7;
+      this.ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.globalAlpha = 1.0;
+    }
+    
+    // Draw fading ring
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = color;
+    this.ctx.globalAlpha = props.opacity * 0.3;
+    this.ctx.lineWidth = 1;
+    this.ctx.arc(position.x, position.y, baseRadius + props.particleSpread * 0.5, 0, Math.PI * 2);
+    this.ctx.stroke();
+    this.ctx.globalAlpha = 1.0;
+  }
+  
+  /**
+   * Get color for a specific clone
+   * @param {string} clone - Clone identifier
+   * @returns {string} - CSS color string
+   * @private
+   */
+  _getCloneColor(clone) {
+    switch (clone) {
+      case 'red':
+        return '#ff4444';
+      case 'green':
+        return '#44ff44';
+      case 'yellow':
+        return '#ffff44';
+      default:
+        return '#ffffff';
+    }
+  }
+  
+  /**
+   * Draw cell pattern based on pattern type
+   * @param {number} x - Center x position
+   * @param {number} y - Center y position
+   * @param {number} radius - Cell radius
+   * @param {string} pattern - Pattern type ('dotted', 'cross', etc.)
+   * @private
+   */
+  _drawCellPattern(x, y, radius, pattern) {
+    switch (pattern) {
+      case 'dotted':
+        // Draw dots around the cell
+        const dotCount = 8;
+        const dotRadius = radius * 0.2;
+        
+        for (let i = 0; i < dotCount; i++) {
+          const angle = (i / dotCount) * Math.PI * 2;
+          const dotX = x + Math.cos(angle) * radius * 0.7;
+          const dotY = y + Math.sin(angle) * radius * 0.7;
+          
+          this.ctx.beginPath();
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        break;
+        
+      case 'cross':
+        // Draw cross inside the cell (already done for senescent cells)
+        break;
+        
+      case 'ring':
+        // Draw ring inside the cell
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 1;
+        this.ctx.arc(x, y, radius * 0.7, 0, Math.PI * 2);
+        this.ctx.stroke();
+        break;
+    }
+  }
+  
+  /**
+   * Get color for age indicator
+   * @param {number} agePercentage - Age as percentage of max age (0-1)
+   * @returns {string} - CSS color string
+   * @private
+   */
+  _getAgeIndicatorColor(agePercentage) {
+    // Green to yellow to red gradient based on age
+    if (agePercentage < 0.5) {
+      // Green to yellow (0% - 50%)
+      const ratio = agePercentage * 2; // 0-1 for this range
+      return `rgb(${Math.floor(255 * ratio)}, 255, 0)`;
+    } else {
+      // Yellow to red (50% - 100%)
+      const ratio = (agePercentage - 0.5) * 2; // 0-1 for this range
+      return `rgb(255, ${Math.floor(255 * (1 - ratio))}, 0)`;
+    }
+  }
+  
+  /**
+   * Get visual indicator for stem cell state
+   * @param {StemCell} stemCell - The stem cell
+   * @returns {Object} - Visual indicator properties
+   * @private
+   */
+  _getStemCellStateIndicator(stemCell) {
+    switch (stemCell.stemCellState) {
+      case StemCell.States.DORMANT:
+        return {
+          symbol: '•', // Dot symbol for dormant
+          color: '#ffffff'
+        };
+        
+      case StemCell.States.ACTIVATING:
+        return {
+          symbol: '◎', // Circle with dot for activating
+          color: '#ffffff'
+        };
+        
+      case StemCell.States.ACTIVE:
+        return {
+          symbol: '★', // Star for active
+          color: '#ffffff'
+        };
+        
+      case StemCell.States.DEPLETED:
+        return {
+          symbol: '✕', // X for depleted
+          color: '#aaaaaa'
+        };
+        
+      default:
+        return {
+          symbol: null,
+          color: '#ffffff'
+        };
+    }
   }
   
   /**
