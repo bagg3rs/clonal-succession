@@ -12,8 +12,6 @@
             background-color: #f5f5f5;
         }
         .container {
-            display: flex;
-            flex-direction: column;
             max-width: 1200px;
             margin: 0 auto;
         }
@@ -55,7 +53,6 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
         }
         button:hover {
             background-color: #45a049;
@@ -67,20 +64,13 @@
         }
         .slider-container label {
             margin-right: 10px;
-            font-size: 14px;
-        }
-        input[type="range"] {
-            width: 150px;
         }
         .value-display {
             margin-left: 10px;
             min-width: 40px;
-            font-size: 14px;
         }
         h2 {
             margin-top: 0;
-            color: #333;
-            font-size: 18px;
         }
         .metric {
             margin-bottom: 15px;
@@ -103,30 +93,11 @@
             padding: 10px;
             font-family: monospace;
             font-size: 12px;
-            background-color: #f9f9f9;
         }
         .event {
             margin-bottom: 5px;
             padding-bottom: 5px;
             border-bottom: 1px solid #eee;
-        }
-        .event-time {
-            color: #666;
-        }
-        .event-type {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        .event-details {
-            color: #333;
-        }
-        .chart-container {
-            height: 200px;
-            margin-bottom: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 10px;
         }
     </style>
 </head>
@@ -149,18 +120,6 @@
                 <label for="maxCellsSlider">Max Cells:</label>
                 <input type="range" id="maxCellsSlider" min="50" max="200" step="10" value="100">
                 <span class="value-display" id="maxCellsValue">100</span>
-            </div>
-            
-            <div class="slider-container">
-                <label for="boundarySlider">Boundary Effect:</label>
-                <input type="range" id="boundarySlider" min="0" max="100" step="5" value="15">
-                <span class="value-display" id="boundaryValue">15%</span>
-            </div>
-            
-            <div class="slider-container">
-                <label for="competitionSlider">Competition:</label>
-                <input type="range" id="competitionSlider" min="0" max="100" step="5" value="70">
-                <span class="value-display" id="competitionValue">70%</span>
             </div>
         </div>
         
@@ -207,279 +166,166 @@
                     <div class="metric-value" id="boundaryEffects">0%</div>
                 </div>
                 
-                <div class="metric">
-                    <div class="metric-title">Replacement Ratio</div>
-                    <div class="metric-value" id="replacementRatio">1.0</div>
-                </div>
-                
-                <div class="metric">
-                    <div class="metric-title">Active Clone</div>
-                    <div class="metric-value" id="activeClone">Red</div>
-                </div>
-                
                 <h2>Event Log</h2>
                 <div class="event-log" id="eventLog"></div>
             </div>
         </div>
-        
-        <div class="chart-container">
-            <canvas id="populationChart"></canvas>
-        </div>
     </div>
 
-    <!-- Load external libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-    
-    <!-- Load simulation modules -->
     <script type="module">
         import Simulation from '../src/core/Simulation.js';
-        import Cell from '../src/core/Cell.js';
-        import StemCell from '../src/core/StemCell.js';
         
-        // Initialize the simulation when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('simulationCanvas');
             const ctx = canvas.getContext('2d');
             
-            // Create simulation instance
-            const simulation = new Simulation({
-                canvas: canvas,
-                parameters: {
-                    maxCells: 100,
-                    activationThreshold: 0.3,
-                    divisionLimit: 25,
-                    suppressionStrength: 1.0,
-                    senescenceRate: 1.0
-                }
-            });
-            
-            // Initialize the simulation
-            simulation.init();
-            
-            // Set up UI controls
-            const startBtn = document.getElementById('startBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const speedSlider = document.getElementById('speedSlider');
-            const maxCellsSlider = document.getElementById('maxCellsSlider');
-            const boundarySlider = document.getElementById('boundarySlider');
-            const competitionSlider = document.getElementById('competitionSlider');
-            
-            // Set up event handlers
-            startBtn.addEventListener('click', () => {
-                simulation.start();
-                updateUI();
-            });
-            
-            stopBtn.addEventListener('click', () => {
-                simulation.stop();
-            });
-            
-            resetBtn.addEventListener('click', () => {
-                simulation.reset();
-                clearEventLog();
-                updateUI();
-            });
-            
-            speedSlider.addEventListener('input', () => {
-                const speed = parseInt(speedSlider.value);
-                document.getElementById('speedValue').textContent = speed + 'x';
-                simulation.setSpeed(speed);
-            });
-            
-            maxCellsSlider.addEventListener('input', () => {
-                const maxCells = parseInt(maxCellsSlider.value);
-                document.getElementById('maxCellsValue').textContent = maxCells;
-                simulation.cellManager.setMaxCells(maxCells);
-                simulation.populationController.setTargetPopulation(maxCells);
-            });
-            
-            boundarySlider.addEventListener('input', () => {
-                const boundaryEffect = parseInt(boundarySlider.value);
-                document.getElementById('boundaryValue').textContent = boundaryEffect + '%';
-                simulation.populationController.boundarySenescenceThreshold = boundaryEffect / 100;
-            });
-            
-            competitionSlider.addEventListener('input', () => {
-                const competition = parseInt(competitionSlider.value);
-                document.getElementById('competitionValue').textContent = competition + '%';
-                simulation.populationController.resourceCompetitionThreshold = competition / 100;
-            });
-            
-            // Set up event listeners for homeostasis events
-            simulation.on('boundarySenescence', (details) => {
-                logEvent('Boundary Senescence', `Cell ${details.cellId} (${details.clone}) became senescent due to boundary proximity`);
-            });
-            
-            simulation.on('resourceCompetition', (details) => {
-                logEvent('Resource Competition', `Cell ${details.cellId} (${details.clone}) became senescent due to crowding (${details.neighbors} neighbors)`);
-            });
-            
-            simulation.on('successionEvent', (details) => {
-                logEvent('Succession Event', `Clone transition from ${details.oldClone} to ${details.newClone} (Trigger: ${details.trigger})`);
-                updateUI();
-            });
-            
-            simulation.on('homeostasisAdjustment', (details) => {
-                logEvent('Homeostasis Adjustment', `Type: ${details.type}`);
-            });
-            
-            simulation.on('selectivePressureApplied', (details) => {
-                logEvent('Selective Pressure', `Applied to cell ${details.cellId} (${details.clone})`);
-            });
-            
-            // Set up population chart
-            const chartCanvas = document.getElementById('populationChart');
-            const populationChart = new Chart(chartCanvas, {
-                type: 'line',
-                data: {
-                    labels: Array(50).fill(''),
-                    datasets: [
-                        {
-                            label: 'Red',
-                            data: Array(50).fill(0),
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Green',
-                            data: Array(50).fill(0),
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Yellow',
-                            data: Array(50).fill(0),
-                            borderColor: 'rgba(255, 206, 86, 1)',
-                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            suggestedMax: 100
-                        }
-                    },
-                    animation: {
-                        duration: 0
+            try {
+                // Create simulation instance
+                const simulation = new Simulation({
+                    canvas: canvas,
+                    parameters: {
+                        maxCells: 100,
+                        activationThreshold: 0.3,
+                        divisionLimit: 25,
+                        suppressionStrength: 1.0,
+                        senescenceRate: 1.0
+                    }
+                });
+                
+                // Initialize the simulation
+                simulation.init();
+                
+                // Set up UI controls
+                const startBtn = document.getElementById('startBtn');
+                const stopBtn = document.getElementById('stopBtn');
+                const resetBtn = document.getElementById('resetBtn');
+                const speedSlider = document.getElementById('speedSlider');
+                const maxCellsSlider = document.getElementById('maxCellsSlider');
+                
+                // Set up event handlers
+                startBtn.addEventListener('click', () => {
+                    simulation.start();
+                    updateUI();
+                });
+                
+                stopBtn.addEventListener('click', () => {
+                    simulation.stop();
+                });
+                
+                resetBtn.addEventListener('click', () => {
+                    simulation.reset();
+                    clearEventLog();
+                    updateUI();
+                });
+                
+                speedSlider.addEventListener('input', () => {
+                    const speed = parseInt(speedSlider.value);
+                    document.getElementById('speedValue').textContent = speed + 'x';
+                    simulation.setSpeed(speed);
+                });
+                
+                maxCellsSlider.addEventListener('input', () => {
+                    const maxCells = parseInt(maxCellsSlider.value);
+                    document.getElementById('maxCellsValue').textContent = maxCells;
+                    simulation.cellManager.setMaxCells(maxCells);
+                    simulation.populationController.setTargetPopulation(maxCells);
+                });
+                
+                // Set up event listeners for homeostasis events
+                simulation.on('boundarySenescence', (details) => {
+                    logEvent('Boundary Senescence', `Cell ${details.cellId} (${details.clone}) became senescent`);
+                });
+                
+                simulation.on('resourceCompetition', (details) => {
+                    logEvent('Resource Competition', `Cell ${details.cellId} (${details.clone}) became senescent`);
+                });
+                
+                simulation.on('successionEvent', (details) => {
+                    logEvent('Succession Event', `Clone transition from ${details.oldClone} to ${details.newClone}`);
+                    updateUI();
+                });
+                
+                // Update UI function
+                function updateUI() {
+                    // Update every 30 frames
+                    if (simulation.frameCount % 30 !== 0) return;
+                    
+                    // Update population metrics
+                    const cellCount = simulation.cellManager.getCellCount();
+                    const maxCells = simulation.cellManager.maxCells;
+                    document.getElementById('populationValue').textContent = `${cellCount} / ${maxCells}`;
+                    
+                    // Update clone distribution
+                    const redCount = simulation.cellManager.getCellsByClone('red').length;
+                    const greenCount = simulation.cellManager.getCellsByClone('green').length;
+                    const yellowCount = simulation.cellManager.getCellsByClone('yellow').length;
+                    
+                    const redPercent = cellCount > 0 ? Math.round((redCount / cellCount) * 100) : 0;
+                    const greenPercent = cellCount > 0 ? Math.round((greenCount / cellCount) * 100) : 0;
+                    const yellowPercent = cellCount > 0 ? Math.round((yellowCount / cellCount) * 100) : 0;
+                    
+                    document.getElementById('cloneDistribution').textContent = 
+                        `Red: ${redPercent}%, Green: ${greenPercent}%, Yellow: ${yellowPercent}%`;
+                    
+                    // Update cell states
+                    const dividingCount = simulation.cellManager.getCellsByState('dividing').length;
+                    const nonDividingCount = simulation.cellManager.getCellsByState('non-dividing').length;
+                    const senescentCount = simulation.cellManager.getCellsByState('senescent').length;
+                    
+                    const dividingPercent = cellCount > 0 ? Math.round((dividingCount / cellCount) * 100) : 0;
+                    const nonDividingPercent = cellCount > 0 ? Math.round((nonDividingCount / cellCount) * 100) : 0;
+                    const senescentPercent = cellCount > 0 ? Math.round((senescentCount / cellCount) * 100) : 0;
+                    
+                    document.getElementById('cellStates').textContent = 
+                        `Dividing: ${dividingPercent}%, Non-dividing: ${nonDividingPercent}%, Senescent: ${senescentPercent}%`;
+                    
+                    // Update homeostasis metrics
+                    if (simulation.populationController) {
+                        const metrics = simulation.populationController.homeostasisMetrics;
+                        document.getElementById('populationStability').textContent = `${Math.round(metrics.populationStability * 100)}%`;
+                        document.getElementById('cloneBalance').textContent = `${Math.round(metrics.cloneBalance * 100)}%`;
+                        document.getElementById('resourceCompetition').textContent = `${Math.round(metrics.resourceCompetition * 100)}%`;
+                        document.getElementById('boundaryEffects').textContent = `${Math.round(metrics.boundaryEffects * 100)}%`;
                     }
                 }
-            });
-            
-            // Update UI function
-            function updateUI() {
-                // Update every 30 frames
-                if (simulation.frameCount % 30 !== 0) return;
                 
-                // Update population metrics
-                const cellCount = simulation.cellManager.getCellCount();
-                const maxCells = simulation.cellManager.maxCells;
-                document.getElementById('populationValue').textContent = `${cellCount} / ${maxCells}`;
-                
-                // Update clone distribution
-                const redCount = simulation.cellManager.getCellsByClone('red').length;
-                const greenCount = simulation.cellManager.getCellsByClone('green').length;
-                const yellowCount = simulation.cellManager.getCellsByClone('yellow').length;
-                
-                const redPercent = cellCount > 0 ? Math.round((redCount / cellCount) * 100) : 0;
-                const greenPercent = cellCount > 0 ? Math.round((greenCount / cellCount) * 100) : 0;
-                const yellowPercent = cellCount > 0 ? Math.round((yellowCount / cellCount) * 100) : 0;
-                
-                document.getElementById('cloneDistribution').textContent = 
-                    `Red: ${redPercent}%, Green: ${greenPercent}%, Yellow: ${yellowPercent}%`;
-                
-                // Update cell states
-                const dividingCount = simulation.cellManager.getCellsByState('dividing').length;
-                const nonDividingCount = simulation.cellManager.getCellsByState('non-dividing').length;
-                const senescentCount = simulation.cellManager.getCellsByState('senescent').length;
-                
-                const dividingPercent = cellCount > 0 ? Math.round((dividingCount / cellCount) * 100) : 0;
-                const nonDividingPercent = cellCount > 0 ? Math.round((nonDividingCount / cellCount) * 100) : 0;
-                const senescentPercent = cellCount > 0 ? Math.round((senescentCount / cellCount) * 100) : 0;
-                
-                document.getElementById('cellStates').textContent = 
-                    `Dividing: ${dividingPercent}%, Non-dividing: ${nonDividingPercent}%, Senescent: ${senescentPercent}%`;
-                
-                // Update homeostasis metrics
-                if (simulation.populationController) {
-                    const metrics = simulation.populationController.homeostasisMetrics;
-                    document.getElementById('populationStability').textContent = `${Math.round(metrics.populationStability * 100)}%`;
-                    document.getElementById('cloneBalance').textContent = `${Math.round(metrics.cloneBalance * 100)}%`;
-                    document.getElementById('resourceCompetition').textContent = `${Math.round(metrics.resourceCompetition * 100)}%`;
-                    document.getElementById('boundaryEffects').textContent = `${Math.round(metrics.boundaryEffects * 100)}%`;
+                // Log events to the event log
+                function logEvent(type, details) {
+                    const eventLog = document.getElementById('eventLog');
+                    const event = document.createElement('div');
+                    event.className = 'event';
+                    
+                    const time = new Date().toLocaleTimeString();
+                    event.innerHTML = `<span class="event-time">[${time}]</span> <span class="event-type">${type}:</span> <span class="event-details">${details}</span>`;
+                    
+                    eventLog.insertBefore(event, eventLog.firstChild);
+                    
+                    // Limit the number of events
+                    if (eventLog.children.length > 50) {
+                        eventLog.removeChild(eventLog.lastChild);
+                    }
                 }
                 
-                // Update replacement ratio
-                if (simulation.populationController && simulation.populationController.balancedReplacementMetrics) {
-                    const ratio = simulation.populationController.balancedReplacementMetrics.replacementRatio;
-                    document.getElementById('replacementRatio').textContent = ratio.toFixed(2);
+                // Clear the event log
+                function clearEventLog() {
+                    const eventLog = document.getElementById('eventLog');
+                    eventLog.innerHTML = '';
                 }
                 
-                // Update active clone
-                if (simulation.stemCellManager) {
-                    const activeClone = simulation.stemCellManager.getActiveClone();
-                    document.getElementById('activeClone').textContent = activeClone.charAt(0).toUpperCase() + activeClone.slice(1);
-                }
+                // Set up animation frame callback to update UI
+                simulation.on('timeUpdated', () => {
+                    updateUI();
+                });
                 
-                // Update chart
-                updateChart();
+                // Start the simulation
+                simulation.start();
+                
+                // Log success
+                logEvent('System', 'Simulation initialized successfully');
+            } catch (error) {
+                console.error('Error initializing simulation:', error);
+                document.getElementById('eventLog').innerHTML = `<div class="event">Error: ${error.message}</div>`;
             }
-            
-            // Update chart with population data
-            function updateChart() {
-                if (!simulation.populationTracker) return;
-                
-                const redHistory = simulation.populationTracker.getClonePopulationHistory('red', 50);
-                const greenHistory = simulation.populationTracker.getClonePopulationHistory('green', 50);
-                const yellowHistory = simulation.populationTracker.getClonePopulationHistory('yellow', 50);
-                
-                populationChart.data.datasets[0].data = redHistory;
-                populationChart.data.datasets[1].data = greenHistory;
-                populationChart.data.datasets[2].data = yellowHistory;
-                
-                populationChart.update();
-            }
-            
-            // Log events to the event log
-            function logEvent(type, details) {
-                const eventLog = document.getElementById('eventLog');
-                const event = document.createElement('div');
-                event.className = 'event';
-                
-                const time = new Date().toLocaleTimeString();
-                event.innerHTML = `<span class="event-time">[${time}]</span> <span class="event-type">${type}:</span> <span class="event-details">${details}</span>`;
-                
-                eventLog.insertBefore(event, eventLog.firstChild);
-                
-                // Limit the number of events
-                if (eventLog.children.length > 50) {
-                    eventLog.removeChild(eventLog.lastChild);
-                }
-            }
-            
-            // Clear the event log
-            function clearEventLog() {
-                const eventLog = document.getElementById('eventLog');
-                eventLog.innerHTML = '';
-            }
-            
-            // Set up animation frame callback to update UI
-            simulation.on('timeUpdated', () => {
-                updateUI();
-            });
-            
-            // Start the simulation
-            simulation.start();
         });
     </script>
 </body>
