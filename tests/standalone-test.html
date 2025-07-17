@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        canvas {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #stats {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Standalone Cell Simulation Test</h1>
+    <p>This page contains a simplified cell simulation that doesn't rely on external modules.</p>
+    
+    <div class="controls">
+        <button id="startBtn">Start</button>
+        <button id="stopBtn">Stop</button>
+        <button id="resetBtn">Reset</button>
+    </div>
+    
+    <canvas id="canvas" width="600" height="400"></canvas>
+    
+    <div id="stats">
+        <p>Cells: <span id="cellCount">0</span></p>
+        <p>Red: <span id="redCount">0</span>, Green: <span id="greenCount">0</span>, Yellow: <span id="yellowCount">0</span></p>
+    </div>
+
+    <script>
+        // Simple cell simulation
+        class Cell {
+            constructor(x, y, clone) {
+                this.x = x;
+                this.y = y;
+                this.clone = clone;
+                this.radius = 5;
+                this.age = 0;
+                this.maxAge = 500 + Math.random() * 500;
+                this.state = 'dividing';
+                this.divisionCooldown = 0;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+            }
+            
+            update() {
+                this.age++;
+                
+                // Move
+                this.x += this.vx * 0.5;
+                this.y += this.vy * 0.5;
+                
+                // Bounce off walls
+                if (this.x < this.radius || this.x > canvas.width - this.radius) {
+                    this.vx *= -0.8;
+                }
+                if (this.y < this.radius || this.y > canvas.height - this.radius) {
+                    this.vy *= -0.8;
+                }
+                
+                // Keep in bounds
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                
+                // Dampen movement
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                
+                // Update division cooldown
+                if (this.divisionCooldown > 0) {
+                    this.divisionCooldown--;
+                }
+                
+                // Update state based on age
+                if (this.state === 'dividing' && this.age > this.maxAge * 0.4) {
+                    this.state = 'non-dividing';
+                } else if (this.state === 'non-dividing' && this.age > this.maxAge * 0.7) {
+                    this.state = 'senescent';
+                }
+                
+                // Return true if cell should die
+                return this.age > this.maxAge;
+            }
+            
+            divide() {
+                if (this.state !== 'dividing' || this.divisionCooldown > 0) {
+                    return null;
+                }
+                
+                this.divisionCooldown = 60;
+                
+                // Create new cell
+                const angle = Math.random() * Math.PI * 2;
+                const distance = this.radius * 2;
+                const childX = this.x + Math.cos(angle) * distance;
+                const childY = this.y + Math.sin(angle) * distance;
+                
+                return new Cell(childX, childY, this.clone);
+            }
+            
+            draw(ctx) {
+                // Get color based on clone and state
+                let color;
+                switch (this.clone) {
+                    case 'red':
+                        color = this.state === 'dividing' ? '#ff4444' : 
+                               (this.state === 'non-dividing' ? '#cc3333' : '#aa2222');
+                        break;
+                    case 'green':
+                        color = this.state === 'dividing' ? '#44ff44' : 
+                               (this.state === 'non-dividing' ? '#33cc33' : '#22aa22');
+                        break;
+                    case 'yellow':
+                        color = this.state === 'dividing' ? '#ffff44' : 
+                               (this.state === 'non-dividing' ? '#cccc33' : '#aaaa22');
+                        break;
+                    default:
+                        color = '#ffffff';
+                }
+                
+                // Draw cell
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw border
+                ctx.beginPath();
+                ctx.strokeStyle = this.state === 'senescent' ? '#888888' : '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // Simulation
+        class Simulation {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.cells = [];
+                this.running = false;
+                this.maxCells = 100;
+                this.clones = ['red', 'green', 'yellow'];
+                this.activeClone = 'red';
+                this.frameCount = 0;
+                
+                // Add initial cell
+                this.addCell(canvas.width / 2, canvas.height / 2, this.activeClone);
+            }
+            
+            start() {
+                if (!this.running) {
+                    this.running = true;
+                    this.loop();
+                }
+            }
+            
+            stop() {
+                this.running = false;
+            }
+            
+            reset() {
+                this.cells = [];
+                this.frameCount = 0;
+                this.activeClone = 'red';
+                this.addCell(this.canvas.width / 2, this.canvas.height / 2, this.activeClone);
+                this.updateStats();
+            }
+            
+            addCell(x, y, clone) {
+                const cell = new Cell(x, y, clone);
+                this.cells.push(cell);
+                return cell;
+            }
+            
+            loop() {
+                if (!this.running) return;
+                
+                this.update();
+                this.draw();
+                this.frameCount++;
+                
+                requestAnimationFrame(() => this.loop());
+            }
+            
+            update() {
+                // Update cells
+                for (let i = this.cells.length - 1; i >= 0; i--) {
+                    const cell = this.cells[i];
+                    const shouldDie = cell.update();
+                    
+                    if (shouldDie) {
+                        this.cells.splice(i, 1);
+                    }
+                }
+                
+                // Process divisions
+                if (this.cells.length < this.maxCells) {
+                    const newCells = [];
+                    
+                    this.cells.forEach(cell => {
+                        if (Math.random() < 0.01 && cell.state === 'dividing') {
+                            const childCell = cell.divide();
+                            if (childCell) {
+                                newCells.push(childCell);
+                            }
+                        }
+                    });
+                    
+                    // Add new cells
+                    newCells.forEach(cell => this.cells.push(cell));
+                }
+                
+                // Check for clone succession
+                if (this.frameCount % 300 === 0) {
+                    this.checkSuccession();
+                }
+                
+                // Update stats every 30 frames
+                if (this.frameCount % 30 === 0) {
+                    this.updateStats();
+                }
+            }
+            
+            checkSuccession() {
+                // Count cells by clone
+                const cloneCounts = {};
+                this.clones.forEach(clone => {
+                    cloneCounts[clone] = this.cells.filter(cell => cell.clone === clone).length;
+                });
+                
+                // Check if active clone is declining
+                const activeCloneCount = cloneCounts[this.activeClone] || 0;
+                const totalCells = this.cells.length;
+                
+                if (activeCloneCount < totalCells * 0.2 || Math.random() < 0.1) {
+                    // Switch to next clone
+                    const currentIndex = this.clones.indexOf(this.activeClone);
+                    const nextIndex = (currentIndex + 1) % this.clones.length;
+                    this.activeClone = this.clones[nextIndex];
+                    
+                    // Add a new cell of the active clone
+                    this.addCell(
+                        this.canvas.width / 2 + (Math.random() - 0.5) * 50,
+                        this.canvas.height / 2 + (Math.random() - 0.5) * 50,
+                        this.activeClone
+                    );
+                    
+                    console.log(`Succession event: New active clone is ${this.activeClone}`);
+                }
+            }
+            
+            draw() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw cells
+                this.cells.forEach(cell => cell.draw(this.ctx));
+            }
+            
+            updateStats() {
+                document.getElementById('cellCount').textContent = this.cells.length;
+                
+                const redCount = this.cells.filter(cell => cell.clone === 'red').length;
+                const greenCount = this.cells.filter(cell => cell.clone === 'green').length;
+                const yellowCount = this.cells.filter(cell => cell.clone === 'yellow').length;
+                
+                document.getElementById('redCount').textContent = redCount;
+                document.getElementById('greenCount').textContent = greenCount;
+                document.getElementById('yellowCount').textContent = yellowCount;
+            }
+        }
+        
+        // Initialize simulation
+        const canvas = document.getElementById('canvas');
+        const simulation = new Simulation(canvas);
+        
+        // Set up controls
+        document.getElementById('startBtn').addEventListener('click', () => simulation.start());
+        document.getElementById('stopBtn').addEventListener('click', () => simulation.stop());
+        document.getElementById('resetBtn').addEventListener('click', () => simulation.reset());
+        
+        // Start simulation
+        simulation.start();
+    </script>
+</body>
+</html>
