@@ -1,312 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clonal Succession in Tumours - Interactive Simulation</title>
-  <style>
-    body {
-      background: #111;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      color: white;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow-x: hidden;
-    }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-      max-width: 800px;
-      width: 100%;
-    }
-    
-    h1 {
-      color: #ff4444;
-      margin-bottom: 10px;
-      font-size: 2.5em;
-    }
-    
-    .subtitle {
-      color: #aaa;
-      font-size: 1.2em;
-      margin-bottom: 10px;
-    }
-    
-    .description {
-      color: #ccc;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-    
-    .simulation-container {
-      position: relative;
-      width: 100%;
-      max-width: 600px;
-      height: 600px;
-      margin: 20px 0;
-      border: 2px solid #555;
-      border-radius: 10px;
-      background: #222;
-      overflow: hidden;
-    }
-    
-    canvas {
-      border: 2px solid #555;
-      border-radius: 10px;
-      background: #222;
-    }
-    
-    .play-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 10px;
-      cursor: pointer;
-      z-index: 10;
-    }
-    
-    .play-button {
-      width: 100px;
-      height: 100px;
-      background: rgba(255, 68, 68, 0.8);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: transform 0.3s, background 0.3s;
-    }
-    
-    .play-button:hover {
-      transform: scale(1.1);
-      background: rgba(255, 68, 68, 1);
-    }
-    
-    .play-icon {
-      width: 0;
-      height: 0;
-      border-style: solid;
-      border-width: 25px 0 25px 40px;
-      border-color: transparent transparent transparent #ffffff;
-      margin-left: 10px;
-    }
-    
-    .reference-link {
-      margin-top: 30px;
-      background: #333;
-      color: white;
-      text-decoration: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      border: 1px solid #555;
-      transition: background 0.3s;
-      display: inline-block;
-    }
-    
-    .reference-link:hover {
-      background: #444;
-    }
-    
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      color: #666;
-      font-size: 0.9em;
-    }
-    
-    .footer a {
-      color: #00e676;
-      text-decoration: none;
-    }
-    
-    .footer a:hover {
-      text-decoration: underline;
-    }
-    
-    /* Desktop responsive styles */
-    @media (min-width: 1200px) {
-      .simulation-container {
-        max-width: 700px;
-        height: 700px;
-      }
-      
-      h1 {
-        font-size: 3em;
-      }
-      
-      .subtitle {
-        font-size: 1.4em;
-      }
-    }
-    
-    /* Tablet responsive styles */
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2em;
-      }
-      
-      .subtitle {
-        font-size: 1em;
-      }
-      
-      .play-button {
-        width: 80px;
-        height: 80px;
-      }
-      
-      .play-icon {
-        border-width: 20px 0 20px 32px;
-      }
-      
-      .simulation-container {
-        max-width: 90vw;
-        height: 90vw;
-        max-height: 500px;
-        margin: 10px 0;
-      }
-    }
-    
-    /* Mobile responsive styles */
-    @media (max-width: 480px) {
-      body {
-        padding: 10px;
-      }
-      
-      h1 {
-        font-size: 1.8em;
-      }
-      
-      .subtitle {
-        font-size: 0.9em;
-      }
-      
-      .description {
-        font-size: 0.9em;
-      }
-      
-      .play-button {
-        width: 60px;
-        height: 60px;
-      }
-      
-      .play-icon {
-        border-width: 15px 0 15px 24px;
-      }
-      
-      .simulation-container {
-        max-width: 95vw;
-        height: 95vw;
-        max-height: 400px;
-        margin: 5px 0;
-      }
-      
-      .reference-link {
-        padding: 10px 16px;
-        font-size: 0.9em;
-      }
-      
-      .footer {
-        font-size: 0.8em;
-        margin-top: 20px;
-      }
-    }
-    
-    /* Very small screens */
-    @media (max-width: 320px) {
-      .simulation-container {
-        height: 300px;
-        max-height: 300px;
-      }
-      
-      h1 {
-        font-size: 1.5em;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Succession Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s;
+        }
+        a:hover {
+            background-color: #e9ecef;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Clonal Succession in Tumours</h1>
-    <div class="subtitle">Interactive Physics-Based Simulation</div>
-    <div class="description">
-      This simulation demonstrates how tumours maintain their populations through clonal succession - 
-      a mechanism where different stem cell clones take turns being active, ensuring tumour survival 
-      despite individual cell populations having limited lifespans.
+    <div class="container">
+        <h1>Cell Succession Simulation</h1>
+        
+        <div class="card">
+            <h2>Test Pages</h2>
+            <p>Select one of the test pages below:</p>
+            
+            <div class="links">
+                <a href="tests/standalone-test.html">Standalone Test (No External Modules)</a>
+                <a href="tests/simple-test.html">Simple Module Import Test</a>
+                <a href="tests/homeostasis-test.html">Homeostasis Test</a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>About</h2>
+            <p>This project simulates clonal succession in cell populations, demonstrating how tumors maintain their cell populations through cycles of stem cell activation and clonal expansion.</p>
+        </div>
     </div>
-  </div>
-
-  <div class="simulation-container">
-    <div id="play-overlay" class="play-overlay">
-      <div class="play-button">
-        <div class="play-icon"></div>
-      </div>
-    </div>
-    <iframe id="simulation-frame" src="animations/clonal-succession-cycle.html" style="border: none; display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;"></iframe>
-  </div>
-
-  <a href="reference.html" class="reference-link">
-    📚 View All Animations & References
-  </a>
-
-  <div class="footer">
-    <p>
-      Open source research simulation • 
-      <a href="https://github.com/bagg3rs/clonal-succession">View on GitHub</a> • 
-      Licensed under MIT
-    </p>
-    <p>
-      Built with Matter.js physics engine and HTML5 Canvas
-    </p>
-  </div>
-
-  <script>
-    document.getElementById('play-overlay').addEventListener('click', function() {
-      // Hide the overlay
-      this.style.display = 'none';
-      
-      // Show the simulation iframe
-      const iframe = document.getElementById('simulation-frame');
-      iframe.style.display = 'block';
-      
-      // Make sure iframe is responsive
-      function adjustIframeSize() {
-        const container = document.querySelector('.simulation-container');
-        if (container && iframe) {
-          iframe.style.width = '100%';
-          iframe.style.height = '100%';
-          
-          // Send resize message to iframe content
-          iframe.onload = function() {
-            try {
-              iframe.contentWindow.postMessage({
-                type: 'resize',
-                width: container.clientWidth,
-                height: container.clientHeight
-              }, '*');
-            } catch (e) {
-              // Cross-origin restrictions may prevent this
-              console.log('Could not send resize message to iframe');
-            }
-          };
-        }
-      }
-      
-      // Adjust on load and resize
-      adjustIframeSize();
-      window.addEventListener('resize', adjustIframeSize);
-    });
-  </script>
 </body>
 </html>
