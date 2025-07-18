@@ -11,6 +11,7 @@ import StemCell from './StemCell.js';
 import StatisticsDisplay from '../utils/StatisticsDisplay.js';
 import ParameterManager from '../utils/ParameterManager.js';
 import PopulationTracker from '../utils/PopulationTracker.js';
+import ParameterWarningSystem from '../utils/ParameterWarningSystem.js';
 
 class Simulation extends EventEmitter {
   /**
@@ -256,6 +257,57 @@ class Simulation extends EventEmitter {
     
     // Restart if it was running
     this.start();
+  }
+  
+  /**
+   * Set a simulation parameter
+   * @param {string} key - Parameter key
+   * @param {any} value - Parameter value
+   */
+  setParameter(key, value) {
+    // Update parameter value
+    if (this.parameters.hasOwnProperty(key)) {
+      this.parameters[key] = value;
+      
+      // Apply parameter to appropriate component
+      switch (key) {
+        case 'maxCells':
+          this.cellManager.maxCells = value;
+          if (this.populationController) {
+            this.populationController.setTargetPopulation(value);
+          }
+          break;
+          
+        case 'activationThreshold':
+          if (this.stemCellManager) {
+            this.stemCellManager.setActivationThreshold(value);
+          }
+          break;
+          
+        case 'divisionLimit':
+          // This will be applied to new stem cells
+          break;
+          
+        case 'suppressionStrength':
+          if (this.stemCellManager) {
+            this.stemCellManager.setSuppressionStrength(value);
+          }
+          break;
+          
+        case 'senescenceRate':
+          if (this.cellManager) {
+            this.cellManager.setSenescenceRate(value);
+          }
+          break;
+          
+        case 'cellLifespan':
+          // This will be applied to new cells
+          break;
+      }
+      
+      // Emit parameter changed event
+      this.emit('parameterChanged', { key, value });
+    }
   }
   
   /**

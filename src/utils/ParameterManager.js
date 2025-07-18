@@ -3,6 +3,8 @@
  * Manages simulation parameters with validation, persistence, and UI controls
  * Implements parameter grouping, validation, constraints, and persistence between sessions
  */
+import ParameterWarningSystem from './ParameterWarningSystem.js';
+
 class ParameterManager {
   /**
    * Create a new parameter manager
@@ -271,6 +273,22 @@ class ParameterManager {
     if (this.simulation) {
       this._applyParametersToSimulation();
     }
+    
+    // Initialize parameter warning system
+    this.warningSystem = new ParameterWarningSystem({
+      parameterManager: this
+    });
+    
+    // Add warning system styles
+    this.warningSystem.addStyles();
+    
+    // Check all parameters for warnings
+    if (this.container) {
+      // Delay to ensure DOM is ready
+      setTimeout(() => {
+        this.warningSystem.checkAllParameters();
+      }, 100);
+    }
   }
   
   /**
@@ -526,9 +544,20 @@ class ParameterManager {
       valueDisplay.className = 'parameter-value-display';
       valueDisplay.textContent = param.value;
       
+      // Add tooltip to value display
+      const valueTooltip = document.createElement('div');
+      valueTooltip.className = 'parameter-value-tooltip';
+      valueTooltip.textContent = this._getParameterEffectDescription(key, param.value);
+      valueDisplay.appendChild(valueTooltip);
+      
       input.addEventListener('input', () => {
-        valueDisplay.textContent = input.value;
-        this._updateParameter(key, parseFloat(input.value));
+        const newValue = parseFloat(input.value);
+        valueDisplay.textContent = newValue;
+        
+        // Update tooltip with effect description
+        valueTooltip.textContent = this._getParameterEffectDescription(key, newValue);
+        
+        this._updateParameter(key, newValue);
       });
       
       sliderContainer.appendChild(input);
@@ -928,6 +957,66 @@ class ParameterManager {
     });
   }
 
+  /**
+   * Get a description of the effect of a parameter value
+   * @param {string} key - Parameter key
+   * @param {any} value - Parameter value
+   * @returns {string} - Description of the effect
+   * @private
+   */
+  _getParameterEffectDescription(key, value) {
+    // Default descriptions based on parameter and value
+    const descriptions = {
+      maxCells: (val) => {
+        if (val < 50) return 'Small population with rapid turnover';
+        if (val > 150) return 'Large population with slower dynamics';
+        return 'Balanced population size';
+      },
+      activationThreshold: (val) => {
+        if (val < 0.2) return 'Rapid stem cell activation';
+        if (val > 0.6) return 'Delayed stem cell activation';
+        return 'Balanced activation timing';
+      },
+      divisionLimit: (val) => {
+        if (val < 15) return 'Short-lived clones';
+        if (val > 35) return 'Long-lived clones';
+        return 'Biologically realistic clone lifespan';
+      },
+      suppressionStrength: (val) => {
+        if (val < 0.5) return 'Weak suppression, frequent succession';
+        if (val > 1.5) return 'Strong suppression, rare succession';
+        return 'Balanced suppression strength';
+      },
+      senescenceRate: (val) => {
+        if (val < 0.7) return 'Slow aging process';
+        if (val > 1.5) return 'Accelerated aging process';
+        return 'Normal aging rate';
+      },
+      cellLifespan: (val) => {
+        if (val < 70) return 'Short-lived cells';
+        if (val > 150) return 'Long-lived cells';
+        return 'Normal cell lifespan';
+      },
+      showSuppressionField: (val) => val ? 'Suppression field visible' : 'Suppression field hidden',
+      showCellStates: (val) => val ? 'Cell states visible' : 'Cell states hidden'
+    };
+    
+    // Return description if available, otherwise return empty string
+    return descriptions[key] ? descriptions[key](value) : '';
+  }
+  
+  /**
+   * Check if a parameter value is extreme and show appropriate warnings
+   * @param {string} key - Parameter key
+   * @param {any} value - Parameter value
+   * @private
+   */
+  _checkExtremeValue(key, value) {
+    // This is now handled by the ParameterWarningSystem
+    // The warning system will check the value against thresholds
+    // and display appropriate warnings
+  }
+  
   /**
    * Update a parameter value
    * @param {string} key - Parameter key
