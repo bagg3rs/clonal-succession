@@ -3,76 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cell Succession Simulation</title>
+    <title>Clonal Succession Simulation</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             color: #333;
+            background-color: #f5f7fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .header p {
+            margin: 10px 0 0;
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
+            padding: 20px;
         }
-        h1 {
-            color: #2c3e50;
+        .intro {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+            margin-top: -20px;
         }
         .card {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
         }
         .links {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
-        a {
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        a.button {
             color: #3498db;
             text-decoration: none;
-            padding: 10px;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border-radius: 6px;
             background-color: #f8f9fa;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            display: block;
+            border: 1px solid #e9ecef;
         }
-        a:hover {
-            background-color: #e9ecef;
-            text-decoration: underline;
+        a.button:hover {
+            background-color: #e3f2fd;
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+        a.button.primary {
+            background-color: #e3f2fd;
+            border-color: #3498db;
+            font-weight: bold;
+        }
+        a.button.primary:hover {
+            background-color: #d0e8fd;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .feature {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .feature h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        .tag {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #3498db;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        @media (max-width: 768px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>Clonal Succession Simulation</h1>
+        <p>Interactive visualization of tumor cell population dynamics</p>
+    </div>
+    
     <div class="container">
-        <h1>Cell Succession Simulation</h1>
+        <div class="intro">
+            <h2>About This Project</h2>
+            <p>This interactive simulation demonstrates how tumors maintain their cell populations through cycles of stem cell activation and clonal expansion. The process of clonal succession allows tumors to persist despite individual cell populations having limited lifespans.</p>
+            
+            <div class="tags">
+                <span class="tag">Cell Biology</span>
+                <span class="tag">Cancer Research</span>
+                <span class="tag">Interactive Simulation</span>
+                <span class="tag">Educational Tool</span>
+                <span class="tag">JavaScript</span>
+                <span class="tag">HTML5 Canvas</span>
+            </div>
+        </div>
         
         <div class="card">
             <h2>Main Simulation</h2>
-            <p>Experience the full clonal succession simulation:</p>
+            <p>Experience the full clonal succession simulation with interactive controls and visualizations:</p>
             
             <div class="links">
-                <a href="animations/clonal-succession-cycle.html" style="background-color: #e3f2fd; font-weight: bold;">Clonal Succession Cycle Animation</a>
+                <a href="animations/clonal-succession-cycle.html" class="button primary">Clonal Succession Cycle Animation</a>
+                <a href="animations/clonal-succession-cycle-with-params.html" class="button">Advanced Simulation with Parameter Controls</a>
             </div>
         </div>
         
         <div class="card">
-            <h2>Test Pages</h2>
-            <p>Select one of the test pages below:</p>
+            <h2>Key Concepts</h2>
             
-            <div class="links">
-                <a href="tests/standalone-test.html">Standalone Test (No External Modules)</a>
-                <a href="tests/simple-test.html">Simple Module Import Test</a>
-                <a href="tests/homeostasis-test.html">Homeostasis Test</a>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>Clonal Succession</h3>
+                    <p>The process by which different stem cell clones take turns dominating the cell population, ensuring long-term tumor survival despite limited individual clone lifespans.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>Stem Cell Activation</h3>
+                    <p>Stem cells transition from dormant to active states when suppression signals weaken, allowing them to divide and produce new cells.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>Cell Lifecycle</h3>
+                    <p>Cells progress through distinct states: dividing, non-dividing, senescent, and eventually death, with each state having unique behaviors.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>Population Homeostasis</h3>
+                    <p>The tumor maintains a relatively stable cell count through balanced cell creation and death, despite constant turnover of individual cells.</p>
+                </div>
             </div>
         </div>
         
         <div class="card">
-            <h2>About</h2>
-            <p>This project simulates clonal succession in cell populations, demonstrating how tumors maintain their cell populations through cycles of stem cell activation and clonal expansion.</p>
+            <h2>Test Pages & Examples</h2>
+            <p>Explore different aspects of the simulation through these specialized test pages:</p>
+            
+            <div class="link-grid">
+                <a href="tests/standalone-test.html" class="button">Standalone Test</a>
+                <a href="tests/simple-test.html" class="button">Simple Module Import Test</a>
+                <a href="tests/homeostasis-test.html" class="button">Homeostasis Test</a>
+                <a href="tests/parameter-warning-test.html" class="button">Parameter Warning System Test</a>
+                <a href="tests/single-row-controls-test.html" class="button">Single Row Controls Test</a>
+                <a href="tests/simplified-controls-test.html" class="button">Simplified Controls Test</a>
+            </div>
         </div>
+        
+        <div class="card">
+            <h2>Documentation</h2>
+            <p>Learn more about the biological basis and technical implementation of the simulation:</p>
+            
+            <div class="link-grid">
+                <a href="docs/biological-basis.md" class="button">Biological Basis</a>
+                <a href="docs/research-notes.md" class="button">Research Notes</a>
+                <a href="models/mathematical-framework.md" class="button">Mathematical Framework</a>
+                <a href="CONTRIBUTING.md" class="button">Contributing Guide</a>
+                <a href="https://github.com/bagg3rs/clonal-succession" class="button">GitHub Repository</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>© 2025 Clonal Succession Simulation Project | <a href="https://github.com/bagg3rs/clonal-succession">GitHub</a></p>
     </div>
 </body>
 </html>
