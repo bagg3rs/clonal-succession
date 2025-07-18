@@ -112,18 +112,73 @@ class CellLifecycleManager {
     
     const newCells = [];
     
+    // Track divisions by clone for balanced replacement
+    const divisionsByClone = {
+      red: 0,
+      green: 0,
+      yellow: 0
+    };
+    
+    // Get current clone populations
+    const clonePopulations = {
+      red: this.getCellsByClone('red').length,
+      green: this.getCellsByClone('green').length,
+      yellow: this.getCellsByClone('yellow').length
+    };
+    
+    // Calculate total population and target per clone
+    const totalPopulation = this.cells.length;
+    const targetPerClone = this.maxCells / 3; // Ideally equal distribution
+    
+    // Calculate division limits for each clone to maintain balance
+    const divisionLimits = {};
+    Object.keys(clonePopulations).forEach(clone => {
+      // Allow more divisions for underrepresented clones
+      if (clonePopulations[clone] < targetPerClone * 0.8) {
+        // Significantly under target - allow more divisions
+        divisionLimits[clone] = Math.max(5, Math.ceil((targetPerClone - clonePopulations[clone]) * 0.2));
+      } else if (clonePopulations[clone] > targetPerClone * 1.2) {
+        // Significantly over target - restrict divisions
+        divisionLimits[clone] = 1;
+      } else {
+        // Near target - allow moderate divisions
+        divisionLimits[clone] = 3;
+      }
+    });
+    
     this.cells.forEach(cell => {
       // Skip if cell is a stem cell (handled separately)
       if (cell.isStemCell) return;
       
+      // Check if this clone has reached its division limit for this frame
+      if (divisionsByClone[cell.clone] >= divisionLimits[cell.clone]) {
+        return;
+      }
+      
       // Determine division probability based on population size and cell state
       let divisionProbability = this._calculateDivisionProbability(cell);
+      
+      // Adjust probability based on clone balance
+      const clonePopulation = clonePopulations[cell.clone] || 0;
+      const cloneRatio = totalPopulation > 0 ? clonePopulation / totalPopulation : 0;
+      
+      // Boost division for underrepresented clones, reduce for overrepresented
+      if (cloneRatio < 0.2) {
+        // Significantly underrepresented - boost division
+        divisionProbability *= 1.5;
+      } else if (cloneRatio > 0.4) {
+        // Significantly overrepresented - reduce division
+        divisionProbability *= 0.5;
+      }
       
       // Attempt division with probability
       if (Math.random() < divisionProbability && cell.age > this.divisionMinAge && cell.canDivide) {
         const childCell = this._divideCell(cell);
         if (childCell) {
           newCells.push(childCell);
+          
+          // Track division by clone
+          divisionsByClone[cell.clone] = (divisionsByClone[cell.clone] || 0) + 1;
           
           // If this is a stem cell division, record it
           if (cell.isStemCell) {
@@ -135,6 +190,70 @@ class CellLifecycleManager {
     
     // Add all new cells to the simulation
     newCells.forEach(cell => this.addCell(cell));
+    
+    // Track balanced replacement metrics
+    this._trackBalancedReplacement(divisionsByClone, clonePopulations);
+  }
+  
+  /**
+   * Track metrics related to balanced replacement of populations
+   * @param {Object} divisionsByClone - Number of divisions per clone in this frame
+   * @param {Object} clonePopulations - Current population of each clone
+   * @private
+   */
+  _trackBalancedReplacement(divisionsByClone, clonePopulations) {
+    // Initialize balanced replacement metrics if not exists
+    if (!this.balancedReplacementMetrics) {
+      this.balancedReplacementMetrics = {
+        divisionHistory: {
+          red: [],
+          green: [],
+          yellow: []
+        },
+        replacementRatio: 1.0, // Ratio of new cells to dying cells
+        cloneBalance: 1.0, // How evenly distributed the clones are (1.0 = perfect balance)
+        lastUpdate: Date.now()
+      };
+    }
+    
+    // Add division counts to history
+    Object.keys(divisionsByClone).forEach(clone => {
+      this.balancedReplacementMetrics.divisionHistory[clone].push(divisionsByClone[clone]);
+      
+      // Keep history at a reasonable size
+      if (this.balancedReplacementMetrics.divisionHistory[clone].length > 50) {
+        this.balancedReplacementMetrics.divisionHistory[clone].shift();
+      }
+    });
+    
+    // Calculate replacement ratio (new cells vs dying cells)
+    const totalDivisions = Object.values(divisionsByClone).reduce((sum, val) => sum + val, 0);
+    const recentDeaths = this.deathCount - (this.lastDeathCount || 0);
+    this.lastDeathCount = this.deathCount;
+    
+    if (recentDeaths > 0) {
+      this.balancedReplacementMetrics.replacementRatio = totalDivisions / recentDeaths;
+    }
+    
+    // Calculate clone balance (how evenly distributed the clones are)
+    const totalPopulation = Object.values(clonePopulations).reduce((sum, val) => sum + val, 0);
+    if (totalPopulation > 0) {
+      // Calculate standard deviation of clone percentages
+      const idealPercentage = 1 / Object.keys(clonePopulations).length;
+      let sumSquaredDiff = 0;
+      
+      Object.values(clonePopulations).forEach(population => {
+        const percentage = population / totalPopulation;
+        sumSquaredDiff += Math.pow(percentage - idealPercentage, 2);
+      });
+      
+      const stdDev = Math.sqrt(sumSquaredDiff / Object.keys(clonePopulations).length);
+      
+      // Convert to balance metric (1.0 = perfect balance, 0.0 = complete imbalance)
+      this.balancedReplacementMetrics.cloneBalance = Math.max(0, 1 - stdDev * 3);
+    }
+    
+    this.balancedReplacementMetrics.lastUpdate = Date.now();
   }
   
   /**
