@@ -10,12 +10,15 @@
 
 ## Type of Change
 <!-- Mark with an 'x' all that apply -->
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Code refactoring
-- [ ] Performance improvement
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📝 Documentation update
+- [ ] ♻️ Code refactoring
+- [ ] ⚡ Performance improvement
+- [ ] 🎨 Code style update
+- [ ] 🧪 Adding or updating tests
+- [ ] 🔥 Removing code or files
 
 ## Testing
 <!-- Describe the tests you ran to verify your changes -->
@@ -33,6 +36,12 @@
 - [ ] My changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing tests pass locally with my changes
+
+## Commit Message Format
+<!-- All commits in this PR should follow the Gitmoji convention -->
+<!-- Format: <gitmoji> <type>: <description> -->
+<!-- Example: ✨ feat: add stem cell visualization -->
+<!-- See CONTRIBUTING.md for more details on our Gitmoji convention -->
 
 ## Additional Notes
 <!-- Add any other information about the PR here -->

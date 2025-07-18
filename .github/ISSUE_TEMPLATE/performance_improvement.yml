@@ -1,0 +1,96 @@
+name: Performance Improvement
+description: Suggest a performance enhancement for the simulation
+title: "[PERF] "
+labels: ["performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us make the simulation faster!
+        
+  - type: textarea
+    id: performance_issue
+    attributes:
+      label: Performance Issue
+      description: Describe the current performance issue or bottleneck
+      placeholder: The simulation slows down when...
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Browsers Affected
+      description: Which browsers exhibit this performance issue?
+      multiple: true
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Microsoft Edge
+        - Opera
+        - Mobile browsers
+        - All browsers
+        - Other
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: devices
+    attributes:
+      label: Devices Affected
+      description: Which devices exhibit this performance issue?
+      multiple: true
+      options:
+        - Desktop (high-end)
+        - Desktop (low-end)
+        - Laptop
+        - Tablet
+        - Mobile phone
+        - All devices
+        - Other
+    validations:
+      required: true
+      
+  - type: input
+    id: cell_count
+    attributes:
+      label: Cell Count
+      description: At approximately what cell count does the performance issue occur?
+      placeholder: e.g., 50, 100, 200+
+    validations:
+      required: false
+      
+  - type: textarea
+    id: proposed_improvement
+    attributes:
+      label: Proposed Improvement
+      description: How do you suggest improving the performance?
+      placeholder: We could optimize this by...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: expected_impact
+    attributes:
+      label: Expected Impact
+      description: What impact do you expect this improvement to have?
+      placeholder: This should improve frame rate by approximately...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: profiling_data
+    attributes:
+      label: Profiling Data
+      description: If available, provide any profiling data or measurements
+    validations:
+      required: false
+      
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context or screenshots about the performance issue here
+    validations:
+      required: false
