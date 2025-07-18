@@ -8,6 +8,7 @@ Thank you for your interest in contributing to the Clonal Succession project! Th
 - [Getting Started](#getting-started)
 - [Issue and Pull Request Workflow](#issue-and-pull-request-workflow)
 - [Development Process](#development-process)
+- [Gitmoji Convention](#gitmoji-convention)
 - [Coding Standards](#coding-standards)
 - [Testing](#testing)
 - [Documentation](#documentation)
@@ -87,10 +88,17 @@ When your PR is merged into the main branch, GitHub will automatically close the
    - `docs/` - for documentation changes
    - `refactor/` - for code refactoring
 
-2. **Commit messages** should be clear and descriptive:
+2. **Commit messages** should follow the Gitmoji convention:
    ```
-   Add mobile responsive controls for small screens
+   <gitmoji> <type>: <description>
    ```
+   
+   For example:
+   ```
+   ✨ feat: add mobile responsive controls for small screens
+   ```
+   
+   See the [Gitmoji Convention](#gitmoji-convention) section below for more details.
 
 3. **Pull Request reviews**:
    - All PRs require at least one review
@@ -116,3 +124,62 @@ When your PR is merged into the main branch, GitHub will automatically close the
 - Update README.md if necessary
 
 Thank you for contributing to the Clonal Succession project!
+
+## Gitmoji Convention
+
+To ensure consistent and informative version control, we use the Gitmoji convention for commit messages. This provides a visual indication of the commit purpose and makes the commit history more readable.
+
+### Commit Format
+
+All commit messages should follow this format:
+```
+<gitmoji> <type>: <description>
+```
+
+For example:
+```
+✨ feat: add stem cell visualization
+```
+
+### Commit Structure
+
+1. **Subject Line**: Brief description (50 chars or less) with gitmoji and type
+2. **Body** (optional): Detailed explanation of changes when needed
+3. **Footer** (optional): Reference issues or breaking changes
+
+Example of a complete commit message:
+```
+✨ feat: implement stem cell activation mechanism
+
+Add logic to detect when suppression drops below threshold and activate
+a new stem cell. Includes visual indicator for activation events.
+
+Closes #42
+```
+
+### Gitmoji Reference Table
+
+| Emoji | Code | Description | Example |
+|-------|------|-------------|---------|
+| ✨ | `:sparkles:` | Introducing new features | `✨ feat: add stem cell visualization` |
+| 🐛 | `:bug:` | Fixing a bug | `🐛 fix: correct cell division logic` |
+| 📝 | `:memo:` | Adding or updating documentation | `📝 docs: update README with new features` |
+| ♻️ | `:recycle:` | Refactoring code | `♻️ refactor: simplify cell lifecycle management` |
+| 🎨 | `:art:` | Improving structure/format of the code | `🎨 style: format simulation code` |
+| ⚡️ | `:zap:` | Improving performance | `⚡️ perf: optimize cell rendering` |
+| 🔥 | `:fire:` | Removing code or files | `🔥 chore: remove unused animation files` |
+| 🧪 | `:test_tube:` | Adding tests | `🧪 test: add tests for stem cell activation` |
+| 🚚 | `:truck:` | Moving or renaming files | `🚚 chore: reorganize animation folder` |
+
+### Commit Frequency
+
+1. **Atomic Commits**: Make small, focused commits that address a single concern
+2. **Logical Boundaries**: Commit after completing each logical task or component
+3. **Working State**: Ensure the codebase is in a working state after each commit
+
+### Branch Management
+
+1. **Feature Branches**: Create a branch for each feature or fix
+2. **Branch Naming**: Use descriptive names with prefixes (e.g., `feature/stem-cell-activation`)
+3. **Regular Updates**: Keep branches up-to-date with the main branch
+4. **Clean History**: Use interactive rebase to clean up commit history before merging

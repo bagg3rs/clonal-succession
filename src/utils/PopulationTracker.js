@@ -1,6 +1,6 @@
 /**
  * PopulationTracker class
- * Tracks and analyzes population data for different clones over time
+ * Tracks population data over time for analysis and visualization
  */
 import EventEmitter from './EventEmitter.js';
 
@@ -8,498 +8,493 @@ class PopulationTracker extends EventEmitter {
   /**
    * Create a new population tracker
    * @param {Object} options - Configuration options
-   * @param {Object} options.simulation - Reference to the simulation
+   * @param {number} options.maxHistoryLength - Maximum number of data points to store (default: 100)
+   * @param {number} options.samplingInterval - Frames between data samples (default: 30)
    */
   constructor(options = {}) {
     super();
     
-    this.simulation = options.simulation;
+    // Configuration
+    this.maxHistoryLength = options.maxHistoryLength || 100;
+    this.samplingInterval = options.samplingInterval || 30;
     
-    // Initialize data structures
+    // Data storage
     this.populationHistory = [];
     this.clonePopulationHistory = {
       red: [],
       green: [],
       yellow: []
     };
-    
     this.statePopulationHistory = {
       dividing: [],
-      nonDividing: [],
+      'non-dividing': [],
       senescent: []
     };
     
-    // Clone-specific state tracking
-    this.cloneStateHistory = {
-      red: { dividing: [], nonDividing: [], senescent: [] },
-      green: { dividing: [], nonDividing: [], senescent: [] },
-      yellow: { dividing: [], nonDividing: [], senescent: [] }
+    // Current data
+    this.currentPopulation = 0;
+    this.clonePopulations = {
+      red: 0,
+      green: 0,
+      yellow: 0
+    };
+    this.statePopulations = {
+      dividing: 0,
+      'non-dividing': 0,
+      senescent: 0
     };
     
-    // Population metrics
-    this.metrics = {
-      peakPopulation: 0,
-      peakClonePopulations: { red: 0, green: 0, yellow: 0 },
-      averagePopulation: 0,
-      populationVariance: 0,
-      cloneDominance: { clone: null, value: 0 },
-      cloneGrowthRates: { red: 0, green: 0, yellow: 0 }
+    // Tracking
+    this.frameCount = 0;
+    this.simulationTime = {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      totalFrames: 0
     };
     
-    // Configuration
-    this.maxHistoryLength = 200;
-    this.updateInterval = 5; // Update every 5 frames
-    this.frameCounter = 0;
-    
-    // Set up event listeners
-    this._initEventListeners();
+    // Events
+    this.events = {
+      succession: [],
+      populationPeak: [],
+      populationValley: [],
+      cloneDominance: []
+    };
   }
   
   /**
-   * Initialize event listeners
-   * @private
+   * Update the tracker with current population data
+   * @param {Object} data - Current population data
+   * @param {number} data.totalPopulation - Total cell count
+   * @param {Object} data.clonePopulations - Population by clone
+   * @param {Object} data.statePopulations - Population by state
+   * @param {Object} data.simulationTime - Current simulation time
    */
-  _initEventListeners() {
-    if (this.simulation) {
-      this.simulation.on('cellCreated', (cell) => this._markForUpdate());
-      this.simulation.on('cellDied', (cell) => this._markForUpdate());
-      this.simulation.on('successionEvent', (details) => this._onSuccessionEvent(details));
-    }
-  }
-  
-  /**
-   * Mark the tracker for update
-   * @private
-   */
-  _markForUpdate() {
-    this.needsUpdate = true;
-  }
-  
-  /**
-   * Handle succession events
-   * @param {Object} details - Succession event details
-   * @private
-   */
-  _onSuccessionEvent(details) {
-    // Record succession in history with population data
-    const successionData = {
-      ...details,
-      time: Date.now(),
-      populationSnapshot: {
-        total: this.getCurrentPopulation(),
-        byClone: this.getClonePopulations(),
-        byState: this.getStatePopulations()
-      }
-    };
+  update(data) {
+    // Update current data
+    this.currentPopulation = data.totalPopulation;
+    this.clonePopulations = { ...data.clonePopulations };
+    this.statePopulations = { ...data.statePopulations };
+    this.simulationTime = { ...data.simulationTime };
     
-    // Add to succession history
-    if (!this.successionHistory) {
-      this.successionHistory = [];
+    // Increment frame counter
+    this.frameCount++;
+    
+    // Sample data at specified interval
+    if (this.frameCount % this.samplingInterval === 0) {
+      this._sampleData();
     }
     
-    this.successionHistory.push(successionData);
+    // Detect and record events
+    this._detectEvents();
     
-    // Keep history at a reasonable size
-    if (this.successionHistory.length > 20) {
-      this.successionHistory.shift();
-    }
-    
-    // Emit event
-    this.emit('successionRecorded', successionData);
+    // Emit update event
+    this.emit('update', {
+      currentPopulation: this.currentPopulation,
+      clonePopulations: this.clonePopulations,
+      statePopulations: this.statePopulations,
+      simulationTime: this.simulationTime
+    });
   }
   
   /**
-   * Update population tracking data
+   * Sample current data and add to history
+   * @private
    */
-  update() {
-    if (!this.simulation || !this.simulation.cellManager) return;
-    
-    this.frameCounter++;
-    
-    // Only update at specified interval or when marked for update
-    if (this.frameCounter < this.updateInterval && !this.needsUpdate) return;
-    
-    // Reset counter and update flag
-    this.frameCounter = 0;
-    this.needsUpdate = false;
-    
-    const cellManager = this.simulation.cellManager;
-    
-    // Get current population counts
-    const totalPopulation = cellManager.getCellCount();
-    
-    // Get clone populations
-    const clonePopulations = {
-      red: cellManager.getCellsByClone('red').length,
-      green: cellManager.getCellsByClone('green').length,
-      yellow: cellManager.getCellsByClone('yellow').length
-    };
-    
-    // Get state populations
-    const statePopulations = {
-      dividing: cellManager.getCellsByState('dividing').length,
-      nonDividing: cellManager.getCellsByState('non-dividing').length,
-      senescent: cellManager.getCellsByState('senescent').length
-    };
-    
-    // Get clone-specific state populations
-    const cloneStatePopulations = {
-      red: {
-        dividing: cellManager.getCellsByClone('red').filter(cell => cell.state === 'dividing').length,
-        nonDividing: cellManager.getCellsByClone('red').filter(cell => cell.state === 'non-dividing').length,
-        senescent: cellManager.getCellsByClone('red').filter(cell => cell.state === 'senescent').length
-      },
-      green: {
-        dividing: cellManager.getCellsByClone('green').filter(cell => cell.state === 'dividing').length,
-        nonDividing: cellManager.getCellsByClone('green').filter(cell => cell.state === 'non-dividing').length,
-        senescent: cellManager.getCellsByClone('green').filter(cell => cell.state === 'senescent').length
-      },
-      yellow: {
-        dividing: cellManager.getCellsByClone('yellow').filter(cell => cell.state === 'dividing').length,
-        nonDividing: cellManager.getCellsByClone('yellow').filter(cell => cell.state === 'non-dividing').length,
-        senescent: cellManager.getCellsByClone('yellow').filter(cell => cell.state === 'senescent').length
-      }
-    };
-    
-    // Add to history
-    this.populationHistory.push(totalPopulation);
-    
-    Object.keys(clonePopulations).forEach(clone => {
-      this.clonePopulationHistory[clone].push(clonePopulations[clone]);
+  _sampleData() {
+    // Add total population to history
+    this.populationHistory.push({
+      value: this.currentPopulation,
+      time: { ...this.simulationTime }
     });
     
-    Object.keys(statePopulations).forEach(state => {
-      this.statePopulationHistory[state].push(statePopulations[state]);
-    });
-    
-    // Add clone-specific state data
-    Object.keys(cloneStatePopulations).forEach(clone => {
-      Object.keys(cloneStatePopulations[clone]).forEach(state => {
-        this.cloneStateHistory[clone][state].push(cloneStatePopulations[clone][state]);
+    // Add clone populations to history
+    for (const clone in this.clonePopulations) {
+      this.clonePopulationHistory[clone].push({
+        value: this.clonePopulations[clone],
+        time: { ...this.simulationTime }
       });
-    });
+    }
     
-    // Trim histories to max length
+    // Add state populations to history
+    for (const state in this.statePopulations) {
+      this.statePopulationHistory[state].push({
+        value: this.statePopulations[state],
+        time: { ...this.simulationTime }
+      });
+    }
+    
+    // Trim histories if they exceed max length
     if (this.populationHistory.length > this.maxHistoryLength) {
       this.populationHistory.shift();
       
-      Object.keys(this.clonePopulationHistory).forEach(clone => {
-        this.clonePopulationHistory[clone].shift();
-      });
-      
-      Object.keys(this.statePopulationHistory).forEach(state => {
-        this.statePopulationHistory[state].shift();
-      });
-      
-      Object.keys(this.cloneStateHistory).forEach(clone => {
-        Object.keys(this.cloneStateHistory[clone]).forEach(state => {
-          this.cloneStateHistory[clone][state].shift();
-        });
-      });
-    }
-    
-    // Update metrics
-    this._updateMetrics();
-    
-    // Emit update event
-    this.emit('populationDataUpdated', {
-      total: totalPopulation,
-      byClone: clonePopulations,
-      byState: statePopulations,
-      byCloneAndState: cloneStatePopulations
-    });
-  }
-  
-  /**
-   * Update population metrics
-   * @private
-   */
-  _updateMetrics() {
-    // Update peak population
-    const currentPopulation = this.populationHistory[this.populationHistory.length - 1] || 0;
-    this.metrics.peakPopulation = Math.max(this.metrics.peakPopulation, currentPopulation);
-    
-    // Update peak clone populations
-    Object.keys(this.clonePopulationHistory).forEach(clone => {
-      const currentClonePopulation = this.clonePopulationHistory[clone][this.clonePopulationHistory[clone].length - 1] || 0;
-      this.metrics.peakClonePopulations[clone] = Math.max(this.metrics.peakClonePopulations[clone], currentClonePopulation);
-    });
-    
-    // Calculate average population (over last 50 data points)
-    const recentHistory = this.populationHistory.slice(-50);
-    if (recentHistory.length > 0) {
-      this.metrics.averagePopulation = recentHistory.reduce((sum, val) => sum + val, 0) / recentHistory.length;
-    }
-    
-    // Calculate population variance
-    if (recentHistory.length > 0) {
-      const mean = this.metrics.averagePopulation;
-      const variance = recentHistory.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / recentHistory.length;
-      this.metrics.populationVariance = variance;
-    }
-    
-    // Calculate clone dominance
-    const currentClonePopulations = {};
-    Object.keys(this.clonePopulationHistory).forEach(clone => {
-      currentClonePopulations[clone] = this.clonePopulationHistory[clone][this.clonePopulationHistory[clone].length - 1] || 0;
-    });
-    
-    if (currentPopulation > 0) {
-      let dominantClone = null;
-      let dominanceValue = 0;
-      
-      Object.keys(currentClonePopulations).forEach(clone => {
-        const ratio = currentClonePopulations[clone] / currentPopulation;
-        if (ratio > dominanceValue) {
-          dominantClone = clone;
-          dominanceValue = ratio;
-        }
-      });
-      
-      this.metrics.cloneDominance = {
-        clone: dominantClone,
-        value: dominanceValue
-      };
-    }
-    
-    // Calculate clone growth rates (over last 20 data points)
-    Object.keys(this.clonePopulationHistory).forEach(clone => {
-      const history = this.clonePopulationHistory[clone];
-      if (history.length >= 20) {
-        const recent = history.slice(-20);
-        const start = recent[0];
-        const end = recent[recent.length - 1];
-        
-        if (start > 0) {
-          // Calculate growth rate as percentage change
-          this.metrics.cloneGrowthRates[clone] = (end - start) / start;
-        } else if (end > 0) {
-          // If starting from zero, use a high growth rate
-          this.metrics.cloneGrowthRates[clone] = 1.0;
-        } else {
-          // No growth
-          this.metrics.cloneGrowthRates[clone] = 0;
+      for (const clone in this.clonePopulationHistory) {
+        if (this.clonePopulationHistory[clone].length > this.maxHistoryLength) {
+          this.clonePopulationHistory[clone].shift();
         }
       }
-    });
+      
+      for (const state in this.statePopulationHistory) {
+        if (this.statePopulationHistory[state].length > this.maxHistoryLength) {
+          this.statePopulationHistory[state].shift();
+        }
+      }
+    }
   }
   
   /**
-   * Get current total population
-   * @returns {number} - Current population count
+   * Detect and record significant events
+   * @private
    */
-  getCurrentPopulation() {
-    return this.populationHistory[this.populationHistory.length - 1] || 0;
+  _detectEvents() {
+    // Detect population peaks and valleys
+    this._detectPopulationExtremes();
+    
+    // Detect clone dominance changes
+    this._detectCloneDominance();
+    
+    // Detect succession events (handled externally and added via recordEvent)
   }
   
   /**
-   * Get current clone populations
-   * @returns {Object} - Object with clone population counts
+   * Detect population peaks and valleys
+   * @private
    */
-  getClonePopulations() {
-    const result = {};
-    Object.keys(this.clonePopulationHistory).forEach(clone => {
-      result[clone] = this.clonePopulationHistory[clone][this.clonePopulationHistory[clone].length - 1] || 0;
-    });
-    return result;
+  _detectPopulationExtremes() {
+    // Need at least 3 data points to detect peaks/valleys
+    if (this.populationHistory.length < 3) return;
+    
+    const lastIndex = this.populationHistory.length - 1;
+    const current = this.populationHistory[lastIndex].value;
+    const previous = this.populationHistory[lastIndex - 1].value;
+    const beforePrevious = this.populationHistory[lastIndex - 2].value;
+    
+    // Detect peak (previous value higher than both adjacent values)
+    if (previous > current && previous > beforePrevious) {
+      this.events.populationPeak.push({
+        time: { ...this.populationHistory[lastIndex - 1].time },
+        value: previous
+      });
+      
+      // Emit event
+      this.emit('populationPeak', {
+        time: { ...this.populationHistory[lastIndex - 1].time },
+        value: previous
+      });
+    }
+    
+    // Detect valley (previous value lower than both adjacent values)
+    if (previous < current && previous < beforePrevious) {
+      this.events.populationValley.push({
+        time: { ...this.populationHistory[lastIndex - 1].time },
+        value: previous
+      });
+      
+      // Emit event
+      this.emit('populationValley', {
+        time: { ...this.populationHistory[lastIndex - 1].time },
+        value: previous
+      });
+    }
   }
   
   /**
-   * Get current state populations
-   * @returns {Object} - Object with state population counts
+   * Detect changes in clone dominance
+   * @private
    */
-  getStatePopulations() {
-    const result = {};
-    Object.keys(this.statePopulationHistory).forEach(state => {
-      result[state] = this.statePopulationHistory[state][this.statePopulationHistory[state].length - 1] || 0;
-    });
-    return result;
+  _detectCloneDominance() {
+    // Find the currently dominant clone
+    let dominantClone = null;
+    let maxPopulation = 0;
+    
+    for (const clone in this.clonePopulations) {
+      if (this.clonePopulations[clone] > maxPopulation) {
+        maxPopulation = this.clonePopulations[clone];
+        dominantClone = clone;
+      }
+    }
+    
+    // Check if dominance has changed
+    if (dominantClone && this.events.cloneDominance.length > 0) {
+      const lastDominant = this.events.cloneDominance[this.events.cloneDominance.length - 1].clone;
+      
+      if (dominantClone !== lastDominant && maxPopulation > 0) {
+        // Record dominance change
+        this._recordCloneDominance(dominantClone, maxPopulation);
+      }
+    } else if (dominantClone && maxPopulation > 0) {
+      // First dominant clone
+      this._recordCloneDominance(dominantClone, maxPopulation);
+    }
   }
   
   /**
-   * Get population history
-   * @param {number} limit - Maximum number of data points to return (optional)
-   * @returns {Array} - Population history array
+   * Record a clone dominance event
+   * @param {string} clone - Dominant clone
+   * @param {number} population - Population of dominant clone
+   * @private
    */
-  getPopulationHistory(limit) {
-    if (limit && limit > 0) {
+  _recordCloneDominance(clone, population) {
+    const event = {
+      time: { ...this.simulationTime },
+      clone: clone,
+      population: population,
+      totalPopulation: this.currentPopulation,
+      percentage: Math.round((population / this.currentPopulation) * 100)
+    };
+    
+    this.events.cloneDominance.push(event);
+    
+    // Emit event
+    this.emit('cloneDominance', event);
+  }
+  
+  /**
+   * Record a succession event
+   * @param {Object} event - Succession event details
+   * @param {string} event.oldClone - Previously dominant clone
+   * @param {string} event.newClone - Newly activated clone
+   * @param {Object} event.populations - Population data at succession time
+   */
+  recordSuccessionEvent(event) {
+    const successionEvent = {
+      time: { ...this.simulationTime },
+      oldClone: event.oldClone,
+      newClone: event.newClone,
+      populations: { ...event.populations },
+      totalPopulation: this.currentPopulation
+    };
+    
+    this.events.succession.push(successionEvent);
+    
+    // Emit event
+    this.emit('succession', successionEvent);
+  }
+  
+  /**
+   * Get the population history
+   * @param {number} limit - Optional limit on number of data points to return
+   * @returns {Array} - Population history data
+   */
+  getPopulationHistory(limit = null) {
+    if (limit && limit < this.populationHistory.length) {
       return this.populationHistory.slice(-limit);
     }
     return [...this.populationHistory];
   }
   
   /**
-   * Get clone population history
-   * @param {string} clone - Clone identifier (optional)
-   * @param {number} limit - Maximum number of data points to return (optional)
-   * @returns {Object|Array} - Clone population history
+   * Get the clone population history
+   * @param {string} clone - Clone identifier (optional, returns all if not specified)
+   * @param {number} limit - Optional limit on number of data points to return
+   * @returns {Object|Array} - Clone population history data
    */
-  getClonePopulationHistory(clone, limit) {
-    if (clone && this.clonePopulationHistory[clone]) {
-      if (limit && limit > 0) {
+  getClonePopulationHistory(clone = null, limit = null) {
+    if (clone) {
+      if (!this.clonePopulationHistory[clone]) {
+        return [];
+      }
+      
+      if (limit && limit < this.clonePopulationHistory[clone].length) {
         return this.clonePopulationHistory[clone].slice(-limit);
       }
+      
       return [...this.clonePopulationHistory[clone]];
     }
     
+    // Return all clone histories
     const result = {};
-    Object.keys(this.clonePopulationHistory).forEach(c => {
-      if (limit && limit > 0) {
+    for (const c in this.clonePopulationHistory) {
+      if (limit && limit < this.clonePopulationHistory[c].length) {
         result[c] = this.clonePopulationHistory[c].slice(-limit);
       } else {
         result[c] = [...this.clonePopulationHistory[c]];
       }
-    });
+    }
+    
     return result;
   }
   
   /**
-   * Get state population history
-   * @param {string} state - State identifier (optional)
-   * @param {number} limit - Maximum number of data points to return (optional)
-   * @returns {Object|Array} - State population history
+   * Get the state population history
+   * @param {string} state - State identifier (optional, returns all if not specified)
+   * @param {number} limit - Optional limit on number of data points to return
+   * @returns {Object|Array} - State population history data
    */
-  getStatePopulationHistory(state, limit) {
-    if (state && this.statePopulationHistory[state]) {
-      if (limit && limit > 0) {
+  getStatePopulationHistory(state = null, limit = null) {
+    if (state) {
+      if (!this.statePopulationHistory[state]) {
+        return [];
+      }
+      
+      if (limit && limit < this.statePopulationHistory[state].length) {
         return this.statePopulationHistory[state].slice(-limit);
       }
+      
       return [...this.statePopulationHistory[state]];
     }
     
+    // Return all state histories
     const result = {};
-    Object.keys(this.statePopulationHistory).forEach(s => {
-      if (limit && limit > 0) {
+    for (const s in this.statePopulationHistory) {
+      if (limit && limit < this.statePopulationHistory[s].length) {
         result[s] = this.statePopulationHistory[s].slice(-limit);
       } else {
         result[s] = [...this.statePopulationHistory[s]];
       }
-    });
-    return result;
-  }
-  
-  /**
-   * Get clone-specific state population history
-   * @param {string} clone - Clone identifier
-   * @param {string} state - State identifier
-   * @param {number} limit - Maximum number of data points to return (optional)
-   * @returns {Object|Array} - Clone-specific state population history
-   */
-  getCloneStateHistory(clone, state, limit) {
-    if (clone && state && this.cloneStateHistory[clone] && this.cloneStateHistory[clone][state]) {
-      if (limit && limit > 0) {
-        return this.cloneStateHistory[clone][state].slice(-limit);
-      }
-      return [...this.cloneStateHistory[clone][state]];
     }
     
-    const result = {};
-    Object.keys(this.cloneStateHistory).forEach(c => {
-      result[c] = {};
-      Object.keys(this.cloneStateHistory[c]).forEach(s => {
-        if (limit && limit > 0) {
-          result[c][s] = this.cloneStateHistory[c][s].slice(-limit);
-        } else {
-          result[c][s] = [...this.cloneStateHistory[c][s]];
-        }
-      });
-    });
     return result;
   }
   
   /**
-   * Get population metrics
-   * @returns {Object} - Population metrics
+   * Get events of a specific type
+   * @param {string} eventType - Event type (succession, populationPeak, populationValley, cloneDominance)
+   * @param {number} limit - Optional limit on number of events to return
+   * @returns {Array} - Event data
    */
-  getMetrics() {
-    return { ...this.metrics };
+  getEvents(eventType, limit = null) {
+    if (!this.events[eventType]) {
+      return [];
+    }
+    
+    if (limit && limit < this.events[eventType].length) {
+      return this.events[eventType].slice(-limit);
+    }
+    
+    return [...this.events[eventType]];
   }
   
   /**
-   * Get succession history
-   * @returns {Array} - Succession history
+   * Get all events
+   * @returns {Object} - All event data by type
    */
-  getSuccessionHistory() {
-    return this.successionHistory ? [...this.successionHistory] : [];
+  getAllEvents() {
+    const result = {};
+    for (const eventType in this.events) {
+      result[eventType] = [...this.events[eventType]];
+    }
+    return result;
+  }
+  
+  /**
+   * Get current population statistics
+   * @returns {Object} - Current population statistics
+   */
+  getCurrentStatistics() {
+    // Calculate clone percentages
+    const clonePercentages = {};
+    for (const clone in this.clonePopulations) {
+      clonePercentages[clone] = this.currentPopulation > 0 ? 
+        Math.round((this.clonePopulations[clone] / this.currentPopulation) * 100) : 0;
+    }
+    
+    // Calculate state percentages
+    const statePercentages = {};
+    for (const state in this.statePopulations) {
+      statePercentages[state] = this.currentPopulation > 0 ? 
+        Math.round((this.statePopulations[state] / this.currentPopulation) * 100) : 0;
+    }
+    
+    return {
+      totalPopulation: this.currentPopulation,
+      clonePopulations: { ...this.clonePopulations },
+      statePopulations: { ...this.statePopulations },
+      clonePercentages,
+      statePercentages,
+      time: { ...this.simulationTime }
+    };
+  }
+  
+  /**
+   * Reset the tracker
+   */
+  reset() {
+    // Reset data storage
+    this.populationHistory = [];
+    this.clonePopulationHistory = {
+      red: [],
+      green: [],
+      yellow: []
+    };
+    this.statePopulationHistory = {
+      dividing: [],
+      'non-dividing': [],
+      senescent: []
+    };
+    
+    // Reset current data
+    this.currentPopulation = 0;
+    this.clonePopulations = {
+      red: 0,
+      green: 0,
+      yellow: 0
+    };
+    this.statePopulations = {
+      dividing: 0,
+      'non-dividing': 0,
+      senescent: 0
+    };
+    
+    // Reset tracking
+    this.frameCount = 0;
+    this.simulationTime = {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      totalFrames: 0
+    };
+    
+    // Reset events
+    this.events = {
+      succession: [],
+      populationPeak: [],
+      populationValley: [],
+      cloneDominance: []
+    };
+    
+    // Emit reset event
+    this.emit('reset');
   }
   
   /**
    * Export population data as CSV
-   * @returns {string} - CSV data
+   * @returns {string} - CSV formatted data
    */
   exportPopulationDataCSV() {
-    // Create CSV header
-    let csv = 'Frame,Total,Red,Green,Yellow,Dividing,NonDividing,Senescent\n';
+    // Create header row
+    let csv = 'Time,TotalPopulation,RedPopulation,GreenPopulation,YellowPopulation,DividingCells,NonDividingCells,SenescentCells\n';
     
-    // Calculate the number of data points
-    const dataPoints = this.populationHistory.length;
-    
-    // Create CSV rows
-    for (let i = 0; i < dataPoints; i++) {
-      const total = this.populationHistory[i];
-      const red = this.clonePopulationHistory.red[i] || 0;
-      const green = this.clonePopulationHistory.green[i] || 0;
-      const yellow = this.clonePopulationHistory.yellow[i] || 0;
-      const dividing = this.statePopulationHistory.dividing[i] || 0;
-      const nonDividing = this.statePopulationHistory.nonDividing[i] || 0;
-      const senescent = this.statePopulationHistory.senescent[i] || 0;
+    // Add data rows
+    for (let i = 0; i < this.populationHistory.length; i++) {
+      const time = this.populationHistory[i].time;
+      const timeString = `${time.days}d ${time.hours}h ${time.minutes}m`;
       
-      csv += [
-        i,
-        total,
-        red,
-        green,
-        yellow,
-        dividing,
-        nonDividing,
-        senescent
-      ].join(',') + '\n';
+      // Get corresponding clone data (may not exist for all time points)
+      const redValue = this.clonePopulationHistory.red[i]?.value || 0;
+      const greenValue = this.clonePopulationHistory.green[i]?.value || 0;
+      const yellowValue = this.clonePopulationHistory.yellow[i]?.value || 0;
+      
+      // Get corresponding state data
+      const dividingValue = this.statePopulationHistory.dividing[i]?.value || 0;
+      const nonDividingValue = this.statePopulationHistory['non-dividing'][i]?.value || 0;
+      const senescentValue = this.statePopulationHistory.senescent[i]?.value || 0;
+      
+      // Add row
+      csv += `${timeString},${this.populationHistory[i].value},${redValue},${greenValue},${yellowValue},${dividingValue},${nonDividingValue},${senescentValue}\n`;
     }
     
     return csv;
   }
   
   /**
-   * Export clone-specific state data as CSV
-   * @returns {string} - CSV data
+   * Export events data as JSON
+   * @returns {string} - JSON formatted event data
    */
-  exportCloneStateDataCSV() {
-    // Create CSV header
-    let csv = 'Frame,Red_Dividing,Red_NonDividing,Red_Senescent,Green_Dividing,Green_NonDividing,Green_Senescent,Yellow_Dividing,Yellow_NonDividing,Yellow_Senescent\n';
-    
-    // Calculate the number of data points
-    const dataPoints = this.populationHistory.length;
-    
-    // Create CSV rows
-    for (let i = 0; i < dataPoints; i++) {
-      const redDividing = this.cloneStateHistory.red.dividing[i] || 0;
-      const redNonDividing = this.cloneStateHistory.red.nonDividing[i] || 0;
-      const redSenescent = this.cloneStateHistory.red.senescent[i] || 0;
-      
-      const greenDividing = this.cloneStateHistory.green.dividing[i] || 0;
-      const greenNonDividing = this.cloneStateHistory.green.nonDividing[i] || 0;
-      const greenSenescent = this.cloneStateHistory.green.senescent[i] || 0;
-      
-      const yellowDividing = this.cloneStateHistory.yellow.dividing[i] || 0;
-      const yellowNonDividing = this.cloneStateHistory.yellow.nonDividing[i] || 0;
-      const yellowSenescent = this.cloneStateHistory.yellow.senescent[i] || 0;
-      
-      csv += [
-        i,
-        redDividing,
-        redNonDividing,
-        redSenescent,
-        greenDividing,
-        greenNonDividing,
-        greenSenescent,
-        yellowDividing,
-        yellowNonDividing,
-        yellowSenescent
-      ].join(',') + '\n';
-    }
-    
-    return csv;
+  exportEventsJSON() {
+    return JSON.stringify(this.events, null, 2);
   }
 }
 
+// Export the PopulationTracker class
 export default PopulationTracker;

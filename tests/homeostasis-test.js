@@ -1,7 +1,7 @@
 // Import required modules
 import Cell from '../src/core/Cell.js';
 import StemCell from '../src/core/StemCell.js';
-import EventEmitter from '../utils/EventEmitter.js';
+import EventEmitter from '../src/utils/EventEmitter.js';
 
 // Simple simulation class for testing homeostasis mechanisms
 class SimpleSimulation extends EventEmitter {
