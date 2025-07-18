@@ -17,7 +17,7 @@
 After creating the repository, GitHub will show you the repository URL. Run these commands:
 
 ```bash
-cd /Users/baggers/clonal-succession
+cd /Users/bag/clonal-succession
 
 # Add the GitHub repository as origin (replace YOUR_USERNAME with your GitHub username)
 git remote add origin https://github.com/YOUR_USERNAME/clonal-succession.git
