@@ -1,0 +1,114 @@
+name: Accessibility Issue
+description: Report an accessibility problem with the simulation
+title: "[A11Y] "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us make this project more accessible to everyone!
+        
+  - type: textarea
+    id: description
+    attributes:
+      label: Accessibility Issue Description
+      description: Describe the accessibility issue you've encountered
+      placeholder: The simulation controls are difficult to use with a screen reader because...
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: wcag_level
+    attributes:
+      label: WCAG Level (if known)
+      description: What level of WCAG does this issue relate to?
+      options:
+        - Level A
+        - Level AA
+        - Level AAA
+        - Not sure
+    validations:
+      required: false
+      
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the accessibility issue
+      placeholder: |
+        1. Go to '...'
+        2. Try to interact with '....'
+        3. Using '...' assistive technology
+        4. Observe the issue
+    validations:
+      required: true
+      
+  - type: textarea
+    id: impact
+    attributes:
+      label: User Impact
+      description: How does this issue impact users with disabilities?
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: assistive_tech
+    attributes:
+      label: Assistive Technology
+      description: What assistive technology were you using? (Select all that apply)
+      multiple: true
+      options:
+        - Screen reader (please specify in additional context)
+        - Keyboard navigation only
+        - Voice recognition
+        - Screen magnifier
+        - High contrast mode
+        - Other (please specify in additional context)
+    validations:
+      required: false
+      
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Browser
+      description: What browser are you using?
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Microsoft Edge
+        - Opera
+        - Other
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - iOS
+        - Android
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: solution
+    attributes:
+      label: Suggested Solution
+      description: If you have ideas on how to fix this accessibility issue, share them here
+    validations:
+      required: false
+      
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or details about the accessibility issue here
+    validations:
+      required: false

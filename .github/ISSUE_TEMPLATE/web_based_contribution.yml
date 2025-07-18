@@ -1,0 +1,115 @@
+name: Web-Based Contribution
+description: Report issues or suggest improvements for web-based contribution workflow
+title: "[WEB-CONTRIB] "
+labels: ["web-contribution", "documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us improve the web-based contribution experience!
+        
+  - type: dropdown
+    id: contribution_type
+    attributes:
+      label: Contribution Type
+      description: What type of web-based contribution issue are you reporting?
+      options:
+        - Setup issue (VS Code on the web)
+        - Documentation improvement
+        - GitHub Pages preview issue
+        - GitHub.com workflow issue
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the issue or improvement suggestion for web-based contribution
+      placeholder: I encountered an issue when trying to set up VS Code on the web...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps To Reproduce (if applicable)
+      description: Steps to reproduce the issue
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. See error
+    validations:
+      required: false
+      
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+      
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Browser
+      description: What browser are you using?
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Microsoft Edge
+        - Opera
+        - Other
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - iOS
+        - Android
+        - ChromeOS
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your issue
+    validations:
+      required: false
+      
+  - type: textarea
+    id: solution
+    attributes:
+      label: Suggested Solution
+      description: If you have ideas on how to improve the web-based contribution experience, share them here
+    validations:
+      required: false
+      
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the issue here
+    validations:
+      required: false
