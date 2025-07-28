@@ -1,61 +1,59 @@
-name: Documentation Improvement
-description: Suggest improvements to the project documentation
+name: Documentation & General
+description: Report documentation issues, ask questions, or suggest general improvements
 title: "[DOCS] "
 labels: ["documentation"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping us improve our documentation!
+        Thanks for helping improve our documentation and project! 
         
   - type: dropdown
-    id: doc_area
+    id: issue_type
     attributes:
-      label: Documentation Area
-      description: Which part of the documentation needs improvement?
-      multiple: false
+      label: What type of issue is this?
+      description: Choose the category that best fits your issue
       options:
-        - README
-        - Code comments
-        - API documentation
-        - User guide
-        - Developer guide
-        - Examples
-        - Other
+        - Documentation is unclear or missing
+        - Documentation has errors or outdated info
+        - General question about the project
+        - Suggestion for project improvement
+        - Other (please specify below)
     validations:
       required: true
       
   - type: textarea
-    id: current_state
+    id: description
     attributes:
-      label: Current State
-      description: What does the current documentation say or not say?
-      placeholder: The current documentation is missing information about...
+      label: What's the issue or question?
+      description: Describe the documentation problem, question, or suggestion
+      placeholder: "Example: The README doesn't explain how to change the simulation speed..."
     validations:
       required: true
       
   - type: textarea
-    id: improvement
+    id: location
     attributes:
-      label: Suggested Improvement
-      description: How should the documentation be improved?
-      placeholder: I suggest adding a section that explains...
+      label: Where is this issue? (if applicable)
+      description: Which file, page, or section needs improvement?
+      placeholder: "Example: README.md section 'Getting Started', or animations/README.md"
     validations:
-      required: true
+      required: false
       
   - type: textarea
-    id: importance
+    id: solution
     attributes:
-      label: Why is this important?
-      description: Why is this documentation improvement necessary?
-      placeholder: This improvement would help users understand...
+      label: What would help?
+      description: How could we fix this or what information would be helpful?
+      placeholder: "Example: Add a section explaining the speed controls with screenshots..."
     validations:
       required: true
       
   - type: textarea
     id: additional
     attributes:
-      label: Additional Context
-      description: Add any other context or screenshots about the documentation improvement here
+      label: Additional context
+      description: Any other details, links, or examples that might help?
+      placeholder: "You can include links to good examples, screenshots, or other relevant information..."
     validations:
       required: false

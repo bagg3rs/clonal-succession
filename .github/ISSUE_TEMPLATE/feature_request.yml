@@ -1,85 +1,58 @@
 name: Feature Request
-description: Suggest an idea for this project
+description: Suggest a new feature, improvement, or enhancement
 title: "[FEATURE] "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest a new feature!
+        Thanks for suggesting an improvement! Help us understand what you'd like to see.
         
   - type: textarea
     id: description
     attributes:
-      label: Feature Description
-      description: A clear and concise description of what you want to happen
-      placeholder: I'd like to see a feature that...
+      label: What feature would you like?
+      description: Describe the feature, improvement, or enhancement you'd like to see
+      placeholder: "Example: I'd like to add a pause button to the simulation so I can..."
     validations:
       required: true
       
   - type: textarea
     id: motivation
     attributes:
-      label: Motivation
-      description: Why is this feature needed? What problem does it solve?
-      placeholder: This feature would help researchers to...
+      label: Why is this needed?
+      description: What problem would this solve or what would it help you do?
+      placeholder: "This would help researchers by allowing them to..."
     validations:
       required: true
       
   - type: textarea
     id: solution
     attributes:
-      label: Proposed Solution
-      description: Describe the solution you'd like
+      label: How should it work?
+      description: Describe how you think this feature should work
+      placeholder: "The pause button could be placed next to the play button and..."
     validations:
       required: true
-      
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives Considered
-      description: Describe any alternative solutions or features you've considered
-    validations:
-      required: false
       
   - type: dropdown
     id: impact
     attributes:
-      label: Impact
-      description: How would you rate the impact of this feature?
+      label: How important is this?
+      description: How much would this feature improve the simulation?
       options:
-        - Critical (simulation doesn't work without it)
-        - High (significantly improves usability/functionality)
-        - Medium (notable improvement)
-        - Low (nice to have)
-    validations:
-      required: true
-      
-  - type: dropdown
-    id: complexity
-    attributes:
-      label: Estimated Complexity
-      description: How complex do you think implementing this feature would be?
-      options:
-        - Simple (few hours)
-        - Moderate (few days)
-        - Complex (week or more)
-        - Not sure
-    validations:
-      required: false
-      
-  - type: textarea
-    id: implementation
-    attributes:
-      label: Implementation Ideas
-      description: If you have ideas on how to implement this feature, share them here
+        - Critical - simulation is hard to use without it
+        - High - would significantly improve usability
+        - Medium - would be a nice improvement
+        - Low - nice to have but not essential
     validations:
       required: false
       
   - type: textarea
     id: additional
     attributes:
-      label: Additional Context
-      description: Add any other context, screenshots, or mockups about the feature request here
+      label: Additional ideas or context
+      description: Any other thoughts, mockups, or examples that might help?
+      placeholder: "You can include links to similar features, mockups, or other relevant information..."
     validations:
       required: false
