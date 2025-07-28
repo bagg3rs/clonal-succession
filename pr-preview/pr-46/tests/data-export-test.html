@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Export Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .simulation-container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .canvas-container {
+      flex: 2;
+    }
+    
+    .controls-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    canvas {
+      background-color: #111;
+      border-radius: 5px;
+    }
+    
+    .panel {
+      background-color: #333;
+      border-radius: 5px;
+      padding: 15px;
+    }
+    
+    .panel h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #ccc;
+    }
+    
+    .button {
+      padding: 8px 12px;
+      background-color: #2a6b9c;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    
+    .button:hover {
+      background-color: #3a7bac;
+    }
+    
+    .export-history {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #333;
+      border-radius: 5px;
+    }
+    
+    .export-history h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #ccc;
+    }
+    
+    .history-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #444;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    
+    .history-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .history-timestamp {
+      font-weight: bold;
+      color: #aaa;
+    }
+    
+    .history-type {
+      display: inline-block;
+      padding: 2px 6px;
+      background-color: #2a6b9c;
+      border-radius: 3px;
+      margin: 0 5px;
+    }
+    
+    .history-count {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Data Export Test</h1>
+    
+    <div class="simulation-container">
+      <div class="canvas-container">
+        <canvas id="simulationCanvas" width="600" height="600"></canvas>
+      </div>
+      
+      <div class="controls-container">
+        <div class="panel">
+          <h2>Simulation Controls</h2>
+          <button id="startButton" class="button">Start</button>
+          <button id="stopButton" class="button">Stop</button>
+          <button id="resetButton" class="button">Reset</button>
+          <div>
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="0.5" max="5" step="0.5" value="1">
+            <span id="speedValue">1x</span>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <h2>Event Generation</h2>
+          <button id="generateSuccession" class="button">Generate Succession</button>
+          <button id="generateActivation" class="button">Generate Activation</button>
+          <button id="generatePeak" class="button">Generate Population Peak</button>
+          <button id="generateValley" class="button">Generate Population Valley</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="panel" id="exportContainer">
+      <!-- Export UI will be inserted here -->
+    </div>
+    
+    <div class="export-history">
+      <h2>Export History</h2>
+      <div id="exportHistoryContainer">
+        <p>No exports yet.</p>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import Simulation from '../src/core/Simulation.js';
+    import Cell from '../src/core/Cell.js';
+    import StemCell from '../src/core/StemCell.js';
+    import EventLogger from '../src/utils/EventLogger.js';
+    import DataExporter from '../src/utils/DataExporter.js';
+    
+    // Initialize simulation
+    const canvas = document.getElementById('simulationCanvas');
+    const exportContainer = document.getElementById('exportContainer');
+    const exportHistoryContainer = document.getElementById('exportHistoryContainer');
+    
+    const simulation = new Simulation({
+      canvas: canvas,
+      parameters: {
+        maxCells: 100,
+        activationThreshold: 0.3,
+        divisionLimit: 25,
+        suppressionStrength: 1.0
+      }
+    });
+    
+    // Initialize event logger
+    const eventLogger = new EventLogger({
+      simulation: simulation,
+      maxEvents: 100
+    });
+    
+    // Attach event logger to simulation
+    simulation.eventLogger = eventLogger;
+    
+    // Initialize data exporter
+    const dataExporter = new DataExporter({
+      simulation: simulation,
+      config: {
+        dateFormat: 'YYYY-MM-DD',
+        timeFormat: 'HH:mm:ss',
+        includeHeaders: true
+      }
+    });
+    
+    // Create enhanced export UI
+    dataExporter.createEnhancedExportUI(exportContainer);
+    
+    // Initialize simulation
+    simulation.init();
+    
+    // Set up control buttons
+    document.getElementById('startButton').addEventListener('click', () => {
+      simulation.start();
+    });
+    
+    document.getElementById('stopButton').addEventListener('click', () => {
+      simulation.stop();
+    });
+    
+    document.getElementById('resetButton').addEventListener('click', () => {
+      simulation.reset();
+    });
+    
+    // Set up speed slider
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    
+    speedSlider.addEventListener('input', () => {
+      const speed = parseFloat(speedSlider.value);
+      speedValue.textContent = `${speed}x`;
+      simulation.setSpeed(speed);
+    });
+    
+    // Set up event generation buttons
+    document.getElementById('generateSuccession').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const oldClone = clones[Math.floor(Math.random() * clones.length)];
+      let newClone;
+      do {
+        newClone = clones[Math.floor(Math.random() * clones.length)];
+      } while (newClone === oldClone);
+      
+      simulation.emit('successionEvent', {
+        oldClone: oldClone,
+        newClone: newClone,
+        populationBefore: simulation.cellManager.getCellCount(),
+        cloneCountsBefore: {
+          red: simulation.cellManager.getCellsByClone('red').length,
+          green: simulation.cellManager.getCellsByClone('green').length,
+          yellow: simulation.cellManager.getCellsByClone('yellow').length
+        },
+        trigger: 'manual_activation'
+      });
+      
+      updateExportHistory();
+    });
+    
+    document.getElementById('generateActivation').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const clone = clones[Math.floor(Math.random() * clones.length)];
+      
+      // Create a mock stem cell for the event
+      const stemCell = new StemCell(
+        canvas.width / 2 + (Math.random() - 0.5) * 100,
+        canvas.height / 2 + (Math.random() - 0.5) * 100,
+        clone,
+        1
+      );
+      
+      simulation.emit('stemCellActivated', stemCell);
+      
+      updateExportHistory();
+    });
+    
+    document.getElementById('generatePeak').addEventListener('click', () => {
+      if (simulation.populationTracker) {
+        simulation.populationTracker.emit('populationPeak', {
+          value: simulation.cellManager.getCellCount(),
+          cloneCounts: {
+            red: simulation.cellManager.getCellsByClone('red').length,
+            green: simulation.cellManager.getCellsByClone('green').length,
+            yellow: simulation.cellManager.getCellsByClone('yellow').length
+          }
+        });
+      } else {
+        eventLogger.logEvent('populationPeak', {
+          value: simulation.cellManager.getCellCount(),
+          cloneCounts: {
+            red: simulation.cellManager.getCellsByClone('red').length,
+            green: simulation.cellManager.getCellsByClone('green').length,
+            yellow: simulation.cellManager.getCellsByClone('yellow').length
+          }
+        });
+      }
+      
+      updateExportHistory();
+    });
+    
+    document.getElementById('generateValley').addEventListener('click', () => {
+      if (simulation.populationTracker) {
+        simulation.populationTracker.emit('populationValley', {
+          value: Math.max(1, simulation.cellManager.getCellCount() - 20),
+          cloneCounts: {
+            red: Math.max(0, simulation.cellManager.getCellsByClone('red').length - 5),
+            green: Math.max(0, simulation.cellManager.getCellsByClone('green').length - 5),
+            yellow: Math.max(0, simulation.cellManager.getCellsByClone('yellow').length - 5)
+          }
+        });
+      } else {
+        eventLogger.logEvent('populationValley', {
+          value: Math.max(1, simulation.cellManager.getCellCount() - 20),
+          cloneCounts: {
+            red: Math.max(0, simulation.cellManager.getCellsByClone('red').length - 5),
+            green: Math.max(0, simulation.cellManager.getCellsByClone('green').length - 5),
+            yellow: Math.max(0, simulation.cellManager.getCellsByClone('yellow').length - 5)
+          }
+        });
+      }
+      
+      updateExportHistory();
+    });
+    
+    // Update export history display
+    function updateExportHistory() {
+      const history = dataExporter.getExportHistory();
+      
+      if (history.length === 0) {
+        exportHistoryContainer.innerHTML = '<p>No exports yet.</p>';
+        return;
+      }
+      
+      exportHistoryContainer.innerHTML = '';
+      
+      // Display most recent exports first
+      history.slice().reverse().forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        // Format timestamp
+        const timestamp = new Date(item.timestamp);
+        const formattedTime = timestamp.toLocaleString();
+        
+        // Format simulation time
+        let simTime = 'N/A';
+        if (item.simulationTime) {
+          simTime = `Day ${item.simulationTime.days} - ${Math.floor(item.simulationTime.hours)}:${Math.floor(item.simulationTime.minutes)}`;
+        }
+        
+        // Format type
+        let typeLabel = item.type;
+        switch (item.type) {
+          case 'population-csv':
+            typeLabel = 'Population CSV';
+            break;
+          case 'events-json':
+            typeLabel = 'Events JSON';
+            break;
+          case 'event-statistics-json':
+            typeLabel = 'Event Statistics';
+            break;
+          case 'clone-red-csv':
+            typeLabel = 'Red Clone CSV';
+            break;
+          case 'clone-green-csv':
+            typeLabel = 'Green Clone CSV';
+            break;
+          case 'clone-yellow-csv':
+            typeLabel = 'Yellow Clone CSV';
+            break;
+          default:
+            typeLabel = item.type;
+        }
+        
+        historyItem.innerHTML = `
+          <div class="history-timestamp">${formattedTime}</div>
+          <div>
+            Exported <span class="history-type">${typeLabel}</span> with 
+            <span class="history-count">${item.recordCount}</span> records
+          </div>
+          <div>Simulation time: ${simTime}</div>
+        `;
+        
+        exportHistoryContainer.appendChild(historyItem);
+      });
+    }
+    
+    // Override download function to prevent actual downloads in test
+    dataExporter.downloadFile = function(data, filename, type) {
+      console.log(`Would download ${filename} with ${data.length} bytes of ${type} data`);
+      this._trackExport(filename.split('-')[2], data.split('\n').length - 1);
+      updateExportHistory();
+    };
+    
+    // Start simulation
+    simulation.start();
+  </script>
+</body>
+</html>

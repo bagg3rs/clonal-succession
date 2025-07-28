@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Logger Integration Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .simulation-container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .canvas-container {
+      flex: 2;
+    }
+    
+    .controls-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    canvas {
+      background-color: #111;
+      border-radius: 5px;
+    }
+    
+    .panel {
+      background-color: #333;
+      border-radius: 5px;
+      padding: 15px;
+    }
+    
+    .panel h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #ccc;
+    }
+    
+    .button {
+      padding: 8px 12px;
+      background-color: #2a6b9c;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    
+    .button:hover {
+      background-color: #3a7bac;
+    }
+    
+    .event-log-container {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .export-container {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Event Logger Integration Test</h1>
+    
+    <div class="simulation-container">
+      <div class="canvas-container">
+        <canvas id="simulationCanvas" width="600" height="600"></canvas>
+      </div>
+      
+      <div class="controls-container">
+        <div class="panel">
+          <h2>Simulation Controls</h2>
+          <button id="startButton" class="button">Start</button>
+          <button id="stopButton" class="button">Stop</button>
+          <button id="resetButton" class="button">Reset</button>
+          <div>
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="0.5" max="5" step="0.5" value="1">
+            <span id="speedValue">1x</span>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <h2>Event Generation</h2>
+          <button id="generateSuccession" class="button">Generate Succession</button>
+          <button id="generateActivation" class="button">Generate Activation</button>
+          <button id="generateDeactivation" class="button">Generate Deactivation</button>
+          <button id="generatePeak" class="button">Generate Population Peak</button>
+        </div>
+        
+        <div class="panel">
+          <h2>Statistics</h2>
+          <div id="statsContainer"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>Event Log</h2>
+      <div id="eventLogContainer" class="event-log-container"></div>
+    </div>
+    
+    <div class="panel export-container">
+      <h2>Data Export</h2>
+      <div id="exportContainer"></div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import Simulation from '../src/core/Simulation.js';
+    import Cell from '../src/core/Cell.js';
+    import StemCell from '../src/core/StemCell.js';
+    import DataExporter from '../src/utils/DataExporter.js';
+    
+    // Initialize simulation
+    const canvas = document.getElementById('simulationCanvas');
+    const statsContainer = document.getElementById('statsContainer');
+    const eventLogContainer = document.getElementById('eventLogContainer');
+    const exportContainer = document.getElementById('exportContainer');
+    
+    const simulation = new Simulation({
+      canvas: canvas,
+      statsContainer: statsContainer,
+      eventLogContainer: eventLogContainer,
+      parameters: {
+        maxCells: 100,
+        activationThreshold: 0.3,
+        divisionLimit: 25,
+        suppressionStrength: 1.0
+      }
+    });
+    
+    // Initialize data exporter
+    const dataExporter = new DataExporter({
+      simulation: simulation
+    });
+    dataExporter.createExportUI(exportContainer);
+    
+    // Initialize simulation
+    simulation.init();
+    
+    // Set up control buttons
+    document.getElementById('startButton').addEventListener('click', () => {
+      simulation.start();
+    });
+    
+    document.getElementById('stopButton').addEventListener('click', () => {
+      simulation.stop();
+    });
+    
+    document.getElementById('resetButton').addEventListener('click', () => {
+      simulation.reset();
+    });
+    
+    // Set up speed slider
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    
+    speedSlider.addEventListener('input', () => {
+      const speed = parseFloat(speedSlider.value);
+      speedValue.textContent = `${speed}x`;
+      simulation.setSpeed(speed);
+    });
+    
+    // Set up event generation buttons
+    document.getElementById('generateSuccession').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const oldClone = clones[Math.floor(Math.random() * clones.length)];
+      let newClone;
+      do {
+        newClone = clones[Math.floor(Math.random() * clones.length)];
+      } while (newClone === oldClone);
+      
+      simulation.emit('successionEvent', {
+        oldClone: oldClone,
+        newClone: newClone,
+        populationBefore: simulation.cellManager.getCellCount(),
+        cloneCountsBefore: {
+          red: simulation.cellManager.getCellsByClone('red').length,
+          green: simulation.cellManager.getCellsByClone('green').length,
+          yellow: simulation.cellManager.getCellsByClone('yellow').length
+        },
+        trigger: 'manual_activation'
+      });
+    });
+    
+    document.getElementById('generateActivation').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const clone = clones[Math.floor(Math.random() * clones.length)];
+      
+      // Create a mock stem cell for the event
+      const stemCell = new StemCell(
+        canvas.width / 2 + (Math.random() - 0.5) * 100,
+        canvas.height / 2 + (Math.random() - 0.5) * 100,
+        clone,
+        1
+      );
+      
+      simulation.emit('stemCellActivated', stemCell);
+    });
+    
+    document.getElementById('generateDeactivation').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const clone = clones[Math.floor(Math.random() * clones.length)];
+      
+      // Create a mock stem cell for the event
+      const stemCell = new StemCell(
+        canvas.width / 2 + (Math.random() - 0.5) * 100,
+        canvas.height / 2 + (Math.random() - 0.5) * 100,
+        clone,
+        1
+      );
+      
+      simulation.emit('stemCellDeactivated', stemCell);
+    });
+    
+    document.getElementById('generatePeak').addEventListener('click', () => {
+      if (simulation.populationTracker) {
+        simulation.populationTracker.emit('populationPeak', {
+          value: simulation.cellManager.getCellCount()
+        });
+      }
+    });
+    
+    // Start simulation
+    simulation.start();
+  </script>
+</body>
+</html>

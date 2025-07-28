@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simplified Controls Test</title>
+  <link rel="stylesheet" href="../animations/mobile-responsive.css">
+  <style>
+    .test-info {
+      background: #333;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .test-info h2 {
+      color: #00e676;
+      margin-top: 0;
+    }
+    
+    .test-info p {
+      margin-bottom: 0;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff4444;
+    }
+    
+    button {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #444;
+    }
+    
+    input[type="range"] {
+      width: 100px;
+    }
+    
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-info">
+    <h2>Simplified Controls Test</h2>
+    <p>This test verifies that only Reset and Speed controls are visible and functional.</p>
+  </div>
+
+  <canvas id="canvas" width="600" height="600" style="background-color: #222;"></canvas>
+
+  <div class="controls">
+    <button id="resetButton">🔄 Reset</button>
+    
+    <div class="control-group">
+      <label>Speed: 
+        <input type="range" id="speedControl" min="0.1" max="2" step="0.1" value="1">
+        <span id="speedValue">1.0</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-value" id="circleCount">0</div>
+      <div>Circles</div>
+    </div>
+  </div>
+
+  <script src="../animations/mobile-responsive.js"></script>
+  <script>
+    // Simple canvas drawing to show it's working
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let circles = [];
+    let simulationSpeed = 1;
+    
+    function drawTestPattern() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw a grid
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 1;
+      
+      for (let i = 0; i < canvas.width; i += 30) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+      
+      // Draw circles
+      circles.forEach(circle => {
+        ctx.fillStyle = circle.color;
+        ctx.beginPath();
+        ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Move circles
+        circle.x += circle.vx * simulationSpeed;
+        circle.y += circle.vy * simulationSpeed;
+        
+        // Bounce off walls
+        if (circle.x < circle.radius || circle.x > canvas.width - circle.radius) {
+          circle.vx *= -1;
+        }
+        if (circle.y < circle.radius || circle.y > canvas.height - circle.radius) {
+          circle.vy *= -1;
+        }
+      });
+      
+      // Draw text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Only Reset and Speed controls', canvas.width / 2, canvas.height / 2);
+      
+      // Update stats
+      document.getElementById('circleCount').textContent = circles.length;
+      
+      // Request next frame
+      requestAnimationFrame(drawTestPattern);
+    }
+    
+    function resetSimulation() {
+      circles = [];
+      // Add some random circles
+      const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44'];
+      for (let i = 0; i < 10; i++) {
+        circles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: 10 + Math.random() * 20,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2
+        });
+      }
+    }
+    
+    function updateSpeed() {
+      simulationSpeed = parseFloat(document.getElementById('speedControl').value);
+      document.getElementById('speedValue').textContent = simulationSpeed.toFixed(1);
+    }
+    
+    // Add event listeners
+    document.getElementById('resetButton').addEventListener('click', resetSimulation);
+    document.getElementById('speedControl').addEventListener('input', updateSpeed);
+    
+    // Initialize
+    resetSimulation();
+    drawTestPattern();
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iframe Responsive Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .simulation-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      height: 0;
+      padding-bottom: 100%; /* Creates a 1:1 aspect ratio */
+      margin: 20px auto;
+      border: 2px solid #555;
+      border-radius: 10px;
+      background: #222;
+      overflow: hidden;
+    }
+    
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    .test-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #45a049;
+    }
+    
+    .results {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-left: 4px solid #4CAF50;
+    }
+    
+    @media (max-width: 600px) {
+      .simulation-container {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>Iframe Responsive Test</h1>
+    
+    <p>This test verifies that the iframe is properly responsive and not cut off at different screen sizes.</p>
+    
+    <div class="simulation-container">
+      <iframe src="../animations/clonal-succession-cycle.html"></iframe>
+    </div>
+    
+    <div class="test-buttons">
+      <button onclick="testIframeSize()">Test Iframe Size</button>
+      <button onclick="testResponsiveness()">Test Responsiveness</button>
+    </div>
+    
+    <div class="results" id="results">
+      <p>Test results will appear here.</p>
+    </div>
+  </div>
+  
+  <script>
+    function testIframeSize() {
+      const iframe = document.querySelector('iframe');
+      const container = document.querySelector('.simulation-container');
+      
+      const results = document.getElementById('results');
+      results.innerHTML = `
+        <h3>Iframe Size Test</h3>
+        <p>Container width: ${container.offsetWidth}px</p>
+        <p>Container height: ${container.offsetHeight}px</p>
+        <p>Iframe width: ${iframe.offsetWidth}px</p>
+        <p>Iframe height: ${iframe.offsetHeight}px</p>
+        <p>Aspect ratio: ${(iframe.offsetHeight / iframe.offsetWidth).toFixed(2)}</p>
+        <p>Status: ${Math.abs(iframe.offsetHeight / iframe.offsetWidth - 1) < 0.05 ? 
+          '<span style="color: green">PASS</span>' : 
+          '<span style="color: red">FAIL</span>'}</p>
+      `;
+    }
+    
+    function testResponsiveness() {
+      const iframe = document.querySelector('iframe');
+      const container = document.querySelector('.simulation-container');
+      
+      // Save original size
+      const originalWidth = container.offsetWidth;
+      const originalHeight = container.offsetHeight;
+      
+      // Simulate smaller viewport
+      container.style.maxWidth = '400px';
+      
+      setTimeout(() => {
+        const newWidth = container.offsetWidth;
+        const newHeight = container.offsetHeight;
+        
+        const results = document.getElementById('results');
+        results.innerHTML = `
+          <h3>Responsiveness Test</h3>
+          <p>Original container size: ${originalWidth}px × ${originalHeight}px</p>
+          <p>Reduced container size: ${newWidth}px × ${newHeight}px</p>
+          <p>Aspect ratio maintained: ${Math.abs(newHeight / newWidth - originalHeight / originalWidth) < 0.05 ? 
+            '<span style="color: green">PASS</span>' : 
+            '<span style="color: red">FAIL</span>'}</p>
+          <p>Iframe fills container: ${
+            iframe.offsetWidth === newWidth && 
+            Math.abs(iframe.offsetHeight - newHeight) < 5 ? 
+            '<span style="color: green">PASS</span>' : 
+            '<span style="color: red">FAIL</span>'}</p>
+        `;
+        
+        // Reset to original size
+        container.style.maxWidth = '';
+      }, 500);
+    }
+    
+    // Run initial test on load
+    window.addEventListener('load', () => {
+      setTimeout(testIframeSize, 1000);
+    });
+  </script>
+</body>
+</html>

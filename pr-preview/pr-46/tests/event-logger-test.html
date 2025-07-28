@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Logger Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #333;
+      border-radius: 5px;
+    }
+    
+    .button {
+      padding: 8px 12px;
+      background-color: #2a6b9c;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+    .button:hover {
+      background-color: #3a7bac;
+    }
+    
+    .event-display {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .event-list, .event-details {
+      flex: 1;
+      background-color: #333;
+      border-radius: 5px;
+      padding: 15px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .event-item {
+      padding: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid;
+      background-color: #444;
+      cursor: pointer;
+    }
+    
+    .event-item:hover {
+      background-color: #555;
+    }
+    
+    .event-item.succession { border-color: #ff5555; }
+    .event-item.stemCellActivation { border-color: #55ff55; }
+    .event-item.stemCellDeactivation { border-color: #5555ff; }
+    .event-item.populationPeak { border-color: #ffff55; }
+    .event-item.populationValley { border-color: #ff55ff; }
+    .event-item.cloneDominance { border-color: #55ffff; }
+    .event-item.boundaryExpansion { border-color: #ff9955; }
+    .event-item.boundaryContraction { border-color: #9955ff; }
+    .event-item.simulationMilestone { border-color: #ffffff; }
+    
+    .event-details pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .filter-controls {
+      margin-bottom: 15px;
+    }
+    
+    .filter-controls select, .filter-controls input {
+      padding: 5px;
+      margin-right: 10px;
+      background-color: #444;
+      color: #eee;
+      border: 1px solid #555;
+    }
+    
+    .stats-panel {
+      background-color: #333;
+      border-radius: 5px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .stat-item {
+      background-color: #444;
+      padding: 10px;
+      border-radius: 3px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Event Logger Test</h1>
+    
+    <div class="controls">
+      <button id="generateSuccession" class="button">Generate Succession Event</button>
+      <button id="generateActivation" class="button">Generate Activation Event</button>
+      <button id="generateDeactivation" class="button">Generate Deactivation Event</button>
+      <button id="generatePopulationPeak" class="button">Generate Population Peak</button>
+      <button id="generatePopulationValley" class="button">Generate Population Valley</button>
+      <button id="generateCloneDominance" class="button">Generate Clone Dominance</button>
+      <button id="generateBoundaryExpansion" class="button">Generate Boundary Expansion</button>
+      <button id="generateMilestone" class="button">Generate Milestone</button>
+      <button id="exportJSON" class="button">Export Events JSON</button>
+      <button id="clearEvents" class="button">Clear Events</button>
+    </div>
+    
+    <div class="filter-controls">
+      <select id="eventTypeFilter">
+        <option value="all">All Event Types</option>
+        <option value="succession">Succession</option>
+        <option value="stemCellActivation">Stem Cell Activation</option>
+        <option value="stemCellDeactivation">Stem Cell Deactivation</option>
+        <option value="populationPeak">Population Peak</option>
+        <option value="populationValley">Population Valley</option>
+        <option value="cloneDominance">Clone Dominance</option>
+        <option value="boundaryExpansion">Boundary Expansion</option>
+        <option value="boundaryContraction">Boundary Contraction</option>
+        <option value="simulationMilestone">Simulation Milestone</option>
+      </select>
+      
+      <input type="text" id="searchInput" placeholder="Search events...">
+      <button id="applyFilters" class="button">Apply Filters</button>
+    </div>
+    
+    <div class="event-display">
+      <div class="event-list" id="eventList">
+        <h2>Events</h2>
+        <div id="eventItems"></div>
+      </div>
+      
+      <div class="event-details" id="eventDetails">
+        <h2>Event Details</h2>
+        <pre id="eventJson"></pre>
+      </div>
+    </div>
+    
+    <div class="stats-panel">
+      <h2>Event Statistics</h2>
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import EventEmitter from '../src/utils/EventEmitter.js';
+    import EventLogger from '../src/utils/EventLogger.js';
+    
+    // Create a mock simulation
+    class MockSimulation extends EventEmitter {
+      constructor() {
+        super();
+        this.time = {
+          days: 1,
+          hours: 0,
+          minutes: 0,
+          totalFrames: 0
+        };
+        this.cellManager = {
+          getCellCount: () => Math.floor(Math.random() * 100),
+          getCellsByClone: (clone) => {
+            return Array(Math.floor(Math.random() * 30)).fill(null);
+          },
+          getCellsByState: (state) => {
+            return Array(Math.floor(Math.random() * 30)).fill(null);
+          }
+        };
+        this.stemCellManager = {
+          getCurrentSuppressionLevel: () => Math.random()
+        };
+      }
+      
+      advanceTime() {
+        this.time.minutes += 30;
+        if (this.time.minutes >= 60) {
+          this.time.hours += Math.floor(this.time.minutes / 60);
+          this.time.minutes %= 60;
+        }
+        if (this.time.hours >= 24) {
+          this.time.days += Math.floor(this.time.hours / 24);
+          this.time.hours %= 24;
+        }
+        this.time.totalFrames += 30;
+        this.emit('timeUpdated', this.time);
+      }
+    }
+    
+    // Create mock simulation and event logger
+    const simulation = new MockSimulation();
+    const eventLogger = new EventLogger({
+      simulation: simulation,
+      maxEvents: 100
+    });
+    
+    // DOM elements
+    const eventItems = document.getElementById('eventItems');
+    const eventJson = document.getElementById('eventJson');
+    const statsGrid = document.getElementById('statsGrid');
+    const eventTypeFilter = document.getElementById('eventTypeFilter');
+    const searchInput = document.getElementById('searchInput');
+    
+    // Event handlers
+    document.getElementById('generateSuccession').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const oldClone = clones[Math.floor(Math.random() * clones.length)];
+      let newClone;
+      do {
+        newClone = clones[Math.floor(Math.random() * clones.length)];
+      } while (newClone === oldClone);
+      
+      simulation.emit('successionEvent', {
+        oldClone: oldClone,
+        newClone: newClone,
+        populationBefore: Math.floor(Math.random() * 100),
+        cloneCountsBefore: {
+          red: Math.floor(Math.random() * 30),
+          green: Math.floor(Math.random() * 30),
+          yellow: Math.floor(Math.random() * 30)
+        },
+        trigger: Math.random() > 0.5 ? 'population_decline' : 'manual_activation'
+      });
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generateActivation').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const clone = clones[Math.floor(Math.random() * clones.length)];
+      
+      simulation.emit('stemCellActivated', {
+        clone: clone,
+        body: {
+          position: {
+            x: Math.random() * 600,
+            y: Math.random() * 600
+          }
+        }
+      });
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generateDeactivation').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const clone = clones[Math.floor(Math.random() * clones.length)];
+      
+      simulation.emit('stemCellDeactivated', {
+        clone: clone,
+        body: {
+          position: {
+            x: Math.random() * 600,
+            y: Math.random() * 600
+          }
+        },
+        maxDivisions: 25,
+        getDivisionsLeft: () => Math.floor(Math.random() * 5)
+      });
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generatePopulationPeak').addEventListener('click', () => {
+      if (simulation.populationTracker) {
+        simulation.populationTracker.emit('populationPeak', {
+          value: Math.floor(Math.random() * 100) + 50
+        });
+      } else {
+        eventLogger.logEvent('populationPeak', {
+          value: Math.floor(Math.random() * 100) + 50,
+          cloneCounts: {
+            red: Math.floor(Math.random() * 30),
+            green: Math.floor(Math.random() * 30),
+            yellow: Math.floor(Math.random() * 30)
+          }
+        });
+      }
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generatePopulationValley').addEventListener('click', () => {
+      if (simulation.populationTracker) {
+        simulation.populationTracker.emit('populationValley', {
+          value: Math.floor(Math.random() * 50)
+        });
+      } else {
+        eventLogger.logEvent('populationValley', {
+          value: Math.floor(Math.random() * 50),
+          cloneCounts: {
+            red: Math.floor(Math.random() * 10),
+            green: Math.floor(Math.random() * 10),
+            yellow: Math.floor(Math.random() * 10)
+          }
+        });
+      }
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generateCloneDominance').addEventListener('click', () => {
+      const clones = ['red', 'green', 'yellow'];
+      const clone = clones[Math.floor(Math.random() * clones.length)];
+      const population = Math.floor(Math.random() * 50) + 20;
+      const totalPopulation = population + Math.floor(Math.random() * 30);
+      
+      if (simulation.populationTracker) {
+        simulation.populationTracker.emit('cloneDominance', {
+          clone: clone,
+          population: population,
+          totalPopulation: totalPopulation,
+          percentage: Math.round((population / totalPopulation) * 100)
+        });
+      } else {
+        eventLogger.logEvent('cloneDominance', {
+          clone: clone,
+          population: population,
+          totalPopulation: totalPopulation,
+          percentage: Math.round((population / totalPopulation) * 100)
+        });
+      }
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generateBoundaryExpansion').addEventListener('click', () => {
+      const previousRadius = Math.floor(Math.random() * 100) + 50;
+      const newRadius = previousRadius + Math.floor(Math.random() * 20) + 5;
+      
+      simulation.emit('cageExpansion', {
+        radius: newRadius,
+        targetRadius: newRadius + Math.floor(Math.random() * 10),
+        cellPressure: Math.random() * 0.8,
+        populationRatio: Math.random() * 0.9
+      });
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('generateMilestone').addEventListener('click', () => {
+      // Set day to multiple of 5
+      simulation.time.days = Math.ceil(simulation.time.days / 5) * 5;
+      simulation.time.hours = 0;
+      simulation.time.minutes = 0;
+      
+      eventLogger.logEvent('simulationMilestone', {
+        milestone: `Day ${simulation.time.days}`,
+        totalPopulation: simulation.cellManager.getCellCount(),
+        cloneCounts: {
+          red: Math.floor(Math.random() * 30),
+          green: Math.floor(Math.random() * 30),
+          yellow: Math.floor(Math.random() * 30)
+        },
+        stateCounts: {
+          dividing: Math.floor(Math.random() * 30),
+          nonDividing: Math.floor(Math.random() * 30),
+          senescent: Math.floor(Math.random() * 30)
+        }
+      });
+      
+      simulation.advanceTime();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('exportJSON').addEventListener('click', () => {
+      const json = eventLogger.exportEventsJSON();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'simulation-events.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+    
+    document.getElementById('clearEvents').addEventListener('click', () => {
+      eventLogger.reset();
+      updateEventDisplay();
+      updateStats();
+    });
+    
+    document.getElementById('applyFilters').addEventListener('click', () => {
+      updateEventDisplay();
+    });
+    
+    // Update event display
+    function updateEventDisplay() {
+      // Clear event items
+      eventItems.innerHTML = '';
+      
+      // Get filter values
+      const typeFilter = eventTypeFilter.value;
+      const searchTerm = searchInput.value.toLowerCase();
+      
+      // Get events based on filter
+      let events = [];
+      if (typeFilter === 'all') {
+        // Get all events
+        const allEvents = eventLogger.getAllEvents();
+        Object.keys(allEvents).forEach(type => {
+          events.push(...allEvents[type]);
+        });
+        
+        // Sort by time (newest first)
+        events.sort((a, b) => {
+          const timeA = a.time.totalFrames || 
+            (a.time.days * 24 * 60 + a.time.hours * 60 + a.time.minutes);
+          const timeB = b.time.totalFrames || 
+            (b.time.days * 24 * 60 + b.time.hours * 60 + b.time.minutes);
+          return timeB - timeA;
+        });
+      } else {
+        // Get events of specific type
+        events = eventLogger.getEvents(typeFilter);
+      }
+      
+      // Apply search filter if needed
+      if (searchTerm) {
+        events = events.filter(event => {
+          const eventString = JSON.stringify(event).toLowerCase();
+          return eventString.includes(searchTerm);
+        });
+      }
+      
+      // Create event items
+      events.forEach(event => {
+        const item = document.createElement('div');
+        item.className = `event-item ${event.type}`;
+        
+        // Format time
+        const time = event.time;
+        const timeStr = `Day ${time.days} - ${Math.floor(time.hours)}:${Math.floor(time.minutes)}`;
+        
+        // Create event summary based on type
+        let summary = '';
+        switch (event.type) {
+          case 'succession':
+            summary = `${event.details.oldClone} → ${event.details.newClone} succession`;
+            break;
+          case 'stemCellActivation':
+            summary = `${event.details.clone} stem cell activated`;
+            break;
+          case 'stemCellDeactivation':
+            summary = `${event.details.clone} stem cell deactivated`;
+            break;
+          case 'populationPeak':
+            summary = `Population peak: ${event.details.value} cells`;
+            break;
+          case 'populationValley':
+            summary = `Population valley: ${event.details.value} cells`;
+            break;
+          case 'cloneDominance':
+            summary = `${event.details.clone} clone dominance (${event.details.percentage}%)`;
+            break;
+          case 'boundaryExpansion':
+            summary = `Boundary expanded to ${Math.round(event.details.radius)}`;
+            break;
+          case 'boundaryContraction':
+            summary = `Boundary contracted to ${Math.round(event.details.radius)}`;
+            break;
+          case 'simulationMilestone':
+            summary = event.details.milestone;
+            break;
+          default:
+            summary = event.type;
+        }
+        
+        item.innerHTML = `<strong>${timeStr}</strong>: ${summary}`;
+        
+        // Add click handler
+        item.addEventListener('click', () => {
+          // Show event details
+          eventJson.textContent = JSON.stringify(event, null, 2);
+          
+          // Highlight selected item
+          document.querySelectorAll('.event-item.selected').forEach(el => {
+            el.classList.remove('selected');
+          });
+          item.classList.add('selected');
+        });
+        
+        eventItems.appendChild(item);
+      });
+      
+      // Show message if no events
+      if (events.length === 0) {
+        eventItems.innerHTML = '<p>No events found.</p>';
+      }
+    }
+    
+    // Update statistics
+    function updateStats() {
+      const stats = eventLogger.getEventStatistics();
+      
+      // Clear stats grid
+      statsGrid.innerHTML = '';
+      
+      // Add total events stat
+      addStatItem('Total Events', stats.totalEvents);
+      
+      // Add event type stats
+      Object.keys(stats.eventsByType).forEach(type => {
+        if (stats.eventsByType[type] > 0) {
+          addStatItem(formatEventType(type), stats.eventsByType[type]);
+        }
+      });
+      
+      // Add event frequency stats if available
+      if (stats.eventFrequency) {
+        Object.keys(stats.eventFrequency).forEach(type => {
+          if (stats.eventFrequency[type] > 0) {
+            addStatItem(`${formatEventType(type)} per day`, stats.eventFrequency[type]);
+          }
+        });
+      }
+    }
+    
+    // Add a stat item to the grid
+    function addStatItem(label, value) {
+      const item = document.createElement('div');
+      item.className = 'stat-item';
+      item.innerHTML = `
+        <div class="stat-value">${value}</div>
+        <div class="stat-label">${label}</div>
+      `;
+      statsGrid.appendChild(item);
+    }
+    
+    // Format event type for display
+    function formatEventType(type) {
+      return type
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, str => str.toUpperCase());
+    }
+    
+    // Initialize
+    updateEventDisplay();
+    updateStats();
+  </script>
+</body>
+</html>
