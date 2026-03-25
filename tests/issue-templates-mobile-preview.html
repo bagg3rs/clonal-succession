@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Templates Mobile Preview</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f6f8fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .template-preview {
+            background: white;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        .template-header {
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .template-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #24292e;
+            margin: 0 0 5px 0;
+        }
+        .template-description {
+            color: #586069;
+            font-size: 14px;
+            margin: 0;
+        }
+        .field {
+            margin-bottom: 20px;
+        }
+        .field-label {
+            font-weight: 600;
+            color: #24292e;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .required {
+            color: #d73a49;
+        }
+        .field-description {
+            color: #586069;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        textarea, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .mobile-test {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stats {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stats h3 {
+            margin-top: 0;
+            color: #155724;
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .template-preview {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Issue Templates Mobile Preview</h1>
+        
+        <div class="mobile-test">
+            <strong>📱 Mobile Test:</strong> Resize your browser window or view on mobile to test responsiveness. 
+            Each template now has maximum 5 fields with only 3 required fields for better mobile usability.
+        </div>
+
+        <div class="stats">
+            <h3>Optimization Results</h3>
+            <ul>
+                <li><strong>Templates reduced:</strong> 8 → 3 (62% reduction)</li>
+                <li><strong>Bug Report fields:</strong> 9 → 5 (44% reduction)</li>
+                <li><strong>Feature Request fields:</strong> 8 → 5 (37% reduction)</li>
+                <li><strong>Required fields per template:</strong> ≤ 3 (mobile-friendly)</li>
+                <li><strong>Format consistency:</strong> All YAML (removed .md template)</li>
+            </ul>
+        </div>
+
+        <!-- Bug Report Template Preview -->
+        <div class="template-preview">
+            <div class="template-header">
+                <h2 class="template-title">🐛 Bug Report</h2>
+                <p class="template-description">Report a bug, accessibility issue, or performance problem</p>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">What's the problem? <span class="required">*</span></label>
+                <div class="field-description">Describe the bug, accessibility issue, or performance problem</div>
+                <textarea placeholder="Example: The simulation freezes when I adjust the cell division rate on mobile..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">How to reproduce <span class="required">*</span></label>
+                <div class="field-description">Simple steps to reproduce the issue</div>
+                <textarea placeholder="1. Open the simulation&#10;2. Click on [specific button]&#10;3. Notice the problem"></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">What should happen instead? <span class="required">*</span></label>
+                <div class="field-description">What did you expect to happen?</div>
+                <textarea placeholder="The simulation should continue running smoothly..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Device & Browser</label>
+                <div class="field-description">What device and browser are you using?</div>
+                <select>
+                    <option>Mobile - Chrome/Safari</option>
+                    <option>Desktop - Chrome</option>
+                    <option>Desktop - Firefox</option>
+                    <option>Desktop - Safari</option>
+                    <option>Desktop - Edge</option>
+                    <option>Other (please specify in additional info)</option>
+                </select>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Screenshots or additional info</label>
+                <div class="field-description">Add screenshots, error messages, or other helpful details</div>
+                <textarea placeholder="You can drag and drop images here, or describe any error messages..."></textarea>
+            </div>
+        </div>
+
+        <!-- Feature Request Template Preview -->
+        <div class="template-preview">
+            <div class="template-header">
+                <h2 class="template-title">✨ Feature Request</h2>
+                <p class="template-description">Suggest a new feature, improvement, or enhancement</p>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">What feature would you like? <span class="required">*</span></label>
+                <div class="field-description">Describe the feature, improvement, or enhancement you'd like to see</div>
+                <textarea placeholder="Example: I'd like to add a pause button to the simulation so I can..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Why is this needed? <span class="required">*</span></label>
+                <div class="field-description">What problem would this solve or what would it help you do?</div>
+                <textarea placeholder="This would help researchers by allowing them to..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">How should it work? <span class="required">*</span></label>
+                <div class="field-description">Describe how you think this feature should work</div>
+                <textarea placeholder="The pause button could be placed next to the play button and..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">How important is this?</label>
+                <div class="field-description">How much would this feature improve the simulation?</div>
+                <select>
+                    <option>Critical - simulation is hard to use without it</option>
+                    <option>High - would significantly improve usability</option>
+                    <option>Medium - would be a nice improvement</option>
+                    <option>Low - nice to have but not essential</option>
+                </select>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Additional ideas or context</label>
+                <div class="field-description">Any other thoughts, mockups, or examples that might help?</div>
+                <textarea placeholder="You can include links to similar features, mockups, or other relevant information..."></textarea>
+            </div>
+        </div>
+
+        <!-- Documentation & General Template Preview -->
+        <div class="template-preview">
+            <div class="template-header">
+                <h2 class="template-title">📚 Documentation & General</h2>
+                <p class="template-description">Report documentation issues, ask questions, or suggest general improvements</p>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">What type of issue is this? <span class="required">*</span></label>
+                <div class="field-description">Choose the category that best fits your issue</div>
+                <select>
+                    <option>Documentation is unclear or missing</option>
+                    <option>Documentation has errors or outdated info</option>
+                    <option>General question about the project</option>
+                    <option>Suggestion for project improvement</option>
+                    <option>Other (please specify below)</option>
+                </select>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">What's the issue or question? <span class="required">*</span></label>
+                <div class="field-description">Describe the documentation problem, question, or suggestion</div>
+                <textarea placeholder="Example: The README doesn't explain how to change the simulation speed..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Where is this issue? (if applicable)</label>
+                <div class="field-description">Which file, page, or section needs improvement?</div>
+                <textarea placeholder="Example: README.md section 'Getting Started', or animations/README.md"></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">What would help? <span class="required">*</span></label>
+                <div class="field-description">How could we fix this or what information would be helpful?</div>
+                <textarea placeholder="Example: Add a section explaining the speed controls with screenshots..."></textarea>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Additional context</label>
+                <div class="field-description">Any other details, links, or examples that might help?</div>
+                <textarea placeholder="You can include links to good examples, screenshots, or other relevant information..."></textarea>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
