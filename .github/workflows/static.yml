@@ -1,4 +1,8 @@
-# Simple workflow for deploying static content to GitHub Pages
+# Builds the static site on every PR and on pushes to main; deploys to GitHub
+# Pages only on pushes to main (or manual dispatch). PRs run the build job -
+# checkout, JS syntax check, configure-pages and upload-pages-artifact - so
+# changes to this workflow and its actions are verified before merge, but
+# nothing is ever deployed from a PR.
 name: Deploy static content to Pages
 
 on:
@@ -6,31 +10,31 @@ on:
   push:
     branches: ["main"]
 
+  # Build-only verification for pull requests (no deploy)
+  pull_request:
+    branches: ["main"]
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Syntax-check JavaScript
+        run: git ls-files -z '*.js' | xargs -0 -n1 node --check
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
@@ -38,6 +42,23 @@ jobs:
         with:
           # Upload entire repository
           path: '.'
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+    # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
