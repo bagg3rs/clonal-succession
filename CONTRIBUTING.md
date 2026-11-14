@@ -21,7 +21,7 @@ Please be respectful and considerate of others when contributing to this project
 
 1. **Fork the repository** to your GitHub account
 2. **Clone your fork** to your local machine
-3. **Set up the development environment** by following instructions in GETTING_STARTED.md
+3. **Set up the development environment** by following instructions in README.md
 
 ## Issue and Pull Request Workflow
 

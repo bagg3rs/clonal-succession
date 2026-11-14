@@ -1,5 +1,7 @@
 # Biological Basis of Clonal Succession
 
+> **Status, November 2026.** This document comes from the early version of the project. It describes suppression by the active clone as the activation trigger. That is one of two possibilities the model compares (the other is room becoming free), and nothing in the sources so far shows which is right. Read it as a hypothesis, not a description of how tumours work.
+
 ## Scientific Background
 
 ### Tumour Stem Cell Theory

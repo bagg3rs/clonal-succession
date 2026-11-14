@@ -1,5 +1,7 @@
 # Getting Started with Clonal Succession Project
 
+> **Out of date.** Kept as a record of the early project layout. Start from the README instead.
+
 ## Quick Start
 
 Welcome to the Clonal Succession project! This repository contains research, models, and visualizations for understanding how tumors maintain their populations through clonal succession mechanisms.

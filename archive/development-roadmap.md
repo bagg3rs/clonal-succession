@@ -1,5 +1,7 @@
 # Development Roadmap: Clonal Succession Project
 
+> **Superseded (July 2025 plan, kept as a record).** Parts of this were later found to be wrong. In particular, about 100 cells was only a drawing limit for the animation, not a real tumour population, and the activation trigger was never shown to be a weakening suppression signal. See the README for where the work stands now.
+
 ## Next Steps for Tomorrow
 
 ### Animation Updates Needed
