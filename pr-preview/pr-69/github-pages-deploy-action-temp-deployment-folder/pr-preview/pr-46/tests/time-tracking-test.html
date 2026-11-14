@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Tracking Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .test-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-left: 4px solid #4CAF50;
+    }
+    .time-display {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2196F3;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Time Tracking Test</h1>
+  
+  <div class="test-container">
+    <h2>Simulation Time Display</h2>
+    <div class="time-display" id="simulation-time">Day 1, 00:00</div>
+    
+    <button onclick="startTest()">Start Test</button>
+    <button onclick="pauseTest()">Pause Test</button>
+    <button onclick="resetTest()">Reset Test</button>
+    <button onclick="speedUp()">Speed Up</button>
+    <button onclick="slowDown()">Slow Down</button>
+    
+    <div>
+      <label for="speedDisplay">Current Speed: </label>
+      <span id="speedDisplay">1.0x</span>
+    </div>
+    
+    <div class="result" id="testResult">
+      Test not started yet.
+    </div>
+  </div>
+  
+  <script>
+    // Simulation time data
+    let simulationTimeData = {
+      totalFrames: 0,
+      days: 1,
+      hours: 0,
+      minutes: 0,
+      framesPerMinute: 10, // How many frames equal one minute in simulation time
+      lastSavedTime: null
+    };
+    
+    let simulationRunning = false;
+    let simulationSpeed = 1.0;
+    let testInterval;
+    
+    // Load saved time if available
+    function loadSavedTime() {
+      const savedTime = localStorage.getItem('clonalSuccessionTime');
+      if (savedTime) {
+        try {
+          const parsedTime = JSON.parse(savedTime);
+          simulationTimeData = parsedTime;
+          updateTimeDisplay();
+          document.getElementById('testResult').textContent = 'Loaded saved time from localStorage.';
+        } catch (e) {
+          console.error("Error loading saved time:", e);
+          document.getElementById('testResult').textContent = 'Error loading saved time: ' + e.message;
+        }
+      } else {
+        document.getElementById('testResult').textContent = 'No saved time found in localStorage.';
+      }
+    }
+    
+    // Save time to localStorage
+    function saveSimulationTime() {
+      try {
+        localStorage.setItem('clonalSuccessionTime', JSON.stringify(simulationTimeData));
+        simulationTimeData.lastSavedTime = new Date().toISOString();
+        document.getElementById('testResult').textContent = 'Time saved to localStorage at ' + new Date().toLocaleTimeString();
+      } catch (e) {
+        console.error("Error saving time:", e);
+        document.getElementById('testResult').textContent = 'Error saving time: ' + e.message;
+      }
+    }
+    
+    // Update simulation time based on frames
+    function updateSimulationTime() {
+      simulationTimeData.totalFrames++;
+      
+      // Calculate time increments based on frames and speed
+      const minuteIncrement = simulationSpeed / simulationTimeData.framesPerMinute;
+      simulationTimeData.minutes += minuteIncrement;
+      
+      // Update hours when minutes reach 60
+      if (simulationTimeData.minutes >= 60) {
+        simulationTimeData.hours += Math.floor(simulationTimeData.minutes / 60);
+        simulationTimeData.minutes %= 60;
+      }
+      
+      // Update days when hours reach 24
+      if (simulationTimeData.hours >= 24) {
+        simulationTimeData.days += Math.floor(simulationTimeData.hours / 24);
+        simulationTimeData.hours %= 24;
+      }
+      
+      // Update display
+      updateTimeDisplay();
+      
+      // Save time every 5 seconds in test mode
+      if (simulationTimeData.totalFrames % 50 === 0) {
+        saveSimulationTime();
+      }
+    }
+    
+    // Format time for display
+    function updateTimeDisplay() {
+      const days = simulationTimeData.days;
+      const hours = Math.floor(simulationTimeData.hours).toString().padStart(2, '0');
+      const minutes = Math.floor(simulationTimeData.minutes).toString().padStart(2, '0');
+      
+      document.getElementById('simulation-time').textContent = `Day ${days}, ${hours}:${minutes}`;
+    }
+    
+    // Reset time to day 1
+    function resetTime() {
+      simulationTimeData = {
+        totalFrames: 0,
+        days: 1,
+        hours: 0,
+        minutes: 0,
+        framesPerMinute: 10,
+        lastSavedTime: null
+      };
+      
+      updateTimeDisplay();
+      saveSimulationTime();
+      document.getElementById('testResult').textContent = 'Time reset to Day 1, 00:00';
+    }
+    
+    // Test functions
+    function startTest() {
+      if (!simulationRunning) {
+        simulationRunning = true;
+        document.getElementById('testResult').textContent = 'Test started. Time is advancing...';
+        
+        // Clear any existing interval
+        if (testInterval) clearInterval(testInterval);
+        
+        // Update time every 100ms
+        testInterval = setInterval(() => {
+          if (simulationRunning) {
+            updateSimulationTime();
+          }
+        }, 100);
+      }
+    }
+    
+    function pauseTest() {
+      simulationRunning = false;
+      document.getElementById('testResult').textContent = 'Test paused at ' + document.getElementById('simulation-time').textContent;
+    }
+    
+    function resetTest() {
+      pauseTest();
+      resetTime();
+    }
+    
+    function speedUp() {
+      simulationSpeed = Math.min(simulationSpeed + 0.5, 5.0);
+      document.getElementById('speedDisplay').textContent = simulationSpeed.toFixed(1) + 'x';
+      document.getElementById('testResult').textContent = 'Speed increased to ' + simulationSpeed.toFixed(1) + 'x';
+    }
+    
+    function slowDown() {
+      simulationSpeed = Math.max(simulationSpeed - 0.5, 0.5);
+      document.getElementById('speedDisplay').textContent = simulationSpeed.toFixed(1) + 'x';
+      document.getElementById('testResult').textContent = 'Speed decreased to ' + simulationSpeed.toFixed(1) + 'x';
+    }
+    
+    // Load saved time on page load
+    window.addEventListener('DOMContentLoaded', loadSavedTime);
+  </script>
+</body>
+</html>

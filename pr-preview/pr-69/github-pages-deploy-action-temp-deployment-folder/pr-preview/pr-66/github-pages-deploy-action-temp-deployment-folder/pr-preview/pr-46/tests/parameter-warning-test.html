@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parameter Warning System Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #333;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    h1 {
+      color: #4CAF50;
+      margin-top: 0;
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: #2a2a2a;
+      border-radius: 5px;
+    }
+    
+    .test-section h2 {
+      margin-top: 0;
+      color: #81C784;
+    }
+    
+    .parameter-container {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #1a1a1a;
+      border-radius: 5px;
+    }
+    
+    .test-controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    .test-result {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #424242;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    
+    .canvas-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    canvas {
+      background-color: #1a1a1a;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Parameter Warning System Test</h1>
+    
+    <div class="test-section">
+      <h2>Parameter Controls with Warning System</h2>
+      <p>This test demonstrates the parameter warning system for extreme parameter values.</p>
+      
+      <div id="parameter-container" class="parameter-container"></div>
+      
+      <div class="test-controls">
+        <button id="reset-button">Reset to Default</button>
+        <button id="extreme-button">Set Extreme Values</button>
+      </div>
+      
+      <div id="test-result" class="test-result">Test results will appear here...</div>
+    </div>
+    
+    <div class="test-section">
+      <h2>Simulation Preview</h2>
+      <p>A simplified simulation preview to demonstrate parameter effects.</p>
+      
+      <div class="canvas-container">
+        <canvas id="preview-canvas" width="400" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import ParameterManager from '../src/utils/ParameterManager.js';
+    import ParameterWarningSystem from '../src/utils/ParameterWarningSystem.js';
+    
+    // Mock simulation for testing
+    class MockSimulation {
+      constructor() {
+        this.parameters = {
+          maxCells: 100,
+          activationThreshold: 0.3,
+          divisionLimit: 25,
+          suppressionStrength: 1.0,
+          senescenceRate: 1.0,
+          cellLifespan: 100
+        };
+        
+        this.eventHandlers = {};
+      }
+      
+      on(event, handler) {
+        if (!this.eventHandlers[event]) {
+          this.eventHandlers[event] = [];
+        }
+        this.eventHandlers[event].push(handler);
+      }
+      
+      emit(event, data) {
+        if (this.eventHandlers[event]) {
+          this.eventHandlers[event].forEach(handler => handler(data));
+        }
+      }
+      
+      setParameter(key, value) {
+        if (this.parameters.hasOwnProperty(key)) {
+          this.parameters[key] = value;
+          this.emit('parameterChanged', { key, value });
+          
+          // Update preview
+          updatePreview();
+        }
+      }
+    }
+    
+    // Initialize components
+    const simulation = new MockSimulation();
+    const parameterContainer = document.getElementById('parameter-container');
+    const testResult = document.getElementById('test-result');
+    const resetButton = document.getElementById('reset-button');
+    const extremeButton = document.getElementById('extreme-button');
+    const previewCanvas = document.getElementById('preview-canvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    
+    // Create parameter manager
+    const parameterManager = new ParameterManager({
+      simulation: simulation,
+      container: parameterContainer,
+      initialParameters: simulation.parameters
+    });
+    
+    // Log events for testing
+    parameterManager.on('parameterChanged', (data) => {
+      logEvent('Parameter changed', data);
+    });
+    
+    parameterManager.on('validationError', (data) => {
+      logEvent('Validation error', data);
+    });
+    
+    // Button event handlers
+    resetButton.addEventListener('click', () => {
+      parameterManager._applyPreset('default');
+      logEvent('Reset to default', {});
+    });
+    
+    extremeButton.addEventListener('click', () => {
+      // Set extreme values to trigger warnings
+      const extremeValues = {
+        maxCells: 190,
+        activationThreshold: 0.8,
+        divisionLimit: 45,
+        suppressionStrength: 1.9,
+        senescenceRate: 1.9,
+        cellLifespan: 190
+      };
+      
+      Object.keys(extremeValues).forEach(key => {
+        parameterManager._updateParameter(key, extremeValues[key]);
+      });
+      
+      logEvent('Set extreme values', extremeValues);
+    });
+    
+    // Helper function to log events
+    function logEvent(type, data) {
+      const timestamp = new Date().toLocaleTimeString();
+      const dataStr = JSON.stringify(data, null, 2);
+      
+      testResult.textContent = `[${timestamp}] ${type}:\n${dataStr}\n\n${testResult.textContent}`;
+      
+      // Limit log length
+      if (testResult.textContent.length > 5000) {
+        testResult.textContent = testResult.textContent.substring(0, 5000) + '...';
+      }
+    }
+    
+    // Preview canvas rendering
+    function updatePreview() {
+      const width = previewCanvas.width;
+      const height = previewCanvas.height;
+      
+      // Clear canvas
+      previewCtx.clearRect(0, 0, width, height);
+      
+      // Draw background
+      previewCtx.fillStyle = '#1a1a1a';
+      previewCtx.fillRect(0, 0, width, height);
+      
+      // Get parameters
+      const maxCells = simulation.parameters.maxCells;
+      const activationThreshold = simulation.parameters.activationThreshold;
+      const divisionLimit = simulation.parameters.divisionLimit;
+      const suppressionStrength = simulation.parameters.suppressionStrength;
+      
+      // Calculate derived values for visualization
+      const cellCount = Math.min(maxCells, 200);
+      const cellSize = Math.min(8, Math.max(3, 10 - cellCount / 40));
+      const boundaryRadius = Math.min(width, height) * 0.4 * (0.5 + cellCount / 400);
+      
+      // Draw boundary
+      previewCtx.beginPath();
+      previewCtx.strokeStyle = '#555555';
+      previewCtx.lineWidth = 2;
+      previewCtx.arc(width / 2, height / 2, boundaryRadius, 0, Math.PI * 2);
+      previewCtx.stroke();
+      
+      // Draw suppression field
+      const suppressionRadius = boundaryRadius * 0.7 * suppressionStrength;
+      const gradient = previewCtx.createRadialGradient(
+        width / 2, height / 2, 0,
+        width / 2, height / 2, suppressionRadius
+      );
+      gradient.addColorStop(0, 'rgba(255, 100, 100, 0.2)');
+      gradient.addColorStop(activationThreshold, 'rgba(255, 100, 100, 0.05)');
+      gradient.addColorStop(1, 'rgba(255, 100, 100, 0)');
+      
+      previewCtx.beginPath();
+      previewCtx.fillStyle = gradient;
+      previewCtx.arc(width / 2, height / 2, suppressionRadius, 0, Math.PI * 2);
+      previewCtx.fill();
+      
+      // Draw cells
+      const cellsToShow = Math.min(100, cellCount);
+      for (let i = 0; i < cellsToShow; i++) {
+        // Calculate position within boundary
+        const angle = (i / cellsToShow) * Math.PI * 2;
+        const distance = Math.random() * boundaryRadius * 0.9;
+        const x = width / 2 + Math.cos(angle) * distance;
+        const y = height / 2 + Math.sin(angle) * distance;
+        
+        // Determine cell state based on division limit
+        let cellColor;
+        if (i < divisionLimit * 2) {
+          cellColor = '#ff4444'; // Dividing
+        } else if (i < divisionLimit * 3) {
+          cellColor = '#ffaa44'; // Non-dividing
+        } else {
+          cellColor = '#ffffff'; // Senescent
+        }
+        
+        // Draw cell
+        previewCtx.beginPath();
+        previewCtx.fillStyle = cellColor;
+        previewCtx.arc(x, y, cellSize, 0, Math.PI * 2);
+        previewCtx.fill();
+        
+        previewCtx.beginPath();
+        previewCtx.strokeStyle = '#333333';
+        previewCtx.lineWidth = 1;
+        previewCtx.arc(x, y, cellSize, 0, Math.PI * 2);
+        previewCtx.stroke();
+      }
+      
+      // Draw parameter info
+      previewCtx.fillStyle = '#ffffff';
+      previewCtx.font = '12px Arial';
+      previewCtx.textAlign = 'left';
+      previewCtx.fillText(`Cells: ${cellCount}`, 10, 20);
+      previewCtx.fillText(`Activation: ${activationThreshold.toFixed(2)}`, 10, 40);
+      previewCtx.fillText(`Division Limit: ${divisionLimit}`, 10, 60);
+      previewCtx.fillText(`Suppression: ${suppressionStrength.toFixed(2)}`, 10, 80);
+    }
+    
+    // Initial preview update
+    updatePreview();
+    
+    // Log initialization
+    logEvent('Test initialized', {
+      parameters: simulation.parameters
+    });
+  </script>
+</body>
+</html>
