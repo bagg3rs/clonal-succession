@@ -1,5 +1,7 @@
 # Animation Specifications for Clonal Succession
 
+> **Status (November 2026):** This document describes suppression by the active clone as if it were how the next stem cell is woken. It is not an established mechanism. It is one of two possibilities the model compares, the other being room becoming free as the active clone fades. What wakes the next stem cell is still an open question.
+
 ## Overview
 This document outlines the requirements and specifications for creating animations that visualise the clonal succession process in tumours.
 

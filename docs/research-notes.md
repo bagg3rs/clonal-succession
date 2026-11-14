@@ -1,5 +1,7 @@
 # Research Notes: Clonal Succession in Tumours
 
+> **Status (November 2026):** This document describes suppression by the active clone as if it were how the next stem cell is woken. It is not an established mechanism. It is one of two possibilities the model compares, the other being room becoming free as the active clone fades. What wakes the next stem cell is still an open question.
+
 ## Core Hypothesis
 Tumours maintain their populations through a sophisticated clonal succession mechanism that ensures survival despite individual cell populations having limited lifespans.
 
