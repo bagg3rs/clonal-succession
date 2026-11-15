@@ -1,5 +1,7 @@
 # Development Roadmap: Clonal Succession Project
 
+> **Superseded (November 2026).** This was a working plan for the first animations and is kept for history. The "100 cells" here was a limit on how many cells the animation could draw, not a tumour population, which runs to around a billion cells. Suppression by the active clone is one of two possibilities the model now compares, not an established mechanism.
+
 ## Next Steps for Tomorrow
 
 ### Animation Updates Needed

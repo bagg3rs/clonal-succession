@@ -23,7 +23,7 @@ clonal-succession/
 │   ├── research-notes.md     # Detailed research findings
 │   ├── biological-basis.md   # Scientific background
 │   └── github-workflow.md    # GitHub workflow guide
-└── next-steps/              # Development roadmap
+└── archive/                # Superseded notes, scripts and the old roadmap
 ```
 
 ## Core Components
