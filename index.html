@@ -7,8 +7,8 @@
 <meta name="description" content="An animated walk through Bruce Baguley’s idea that tumours keep going as a relay of mortal clones, in his own words.">
 <style>
   :root {
-    --ink: #1f2933; --muted: #5b6670; --bg: #faf7f2; --panel: #fff;
-    --line: #e4ddd2; --accent: #2e6f95;
+    --ink: #e6edf3; --muted: #8b949e; --bg: #0d1117; --panel: #151b24;
+    --line: #232c38; --accent: #4cc9f0;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -30,15 +30,15 @@
   .textbar button { padding: 4px 12px; font-size: .85rem; }
   button {
     font: inherit; font-size: .95rem; padding: 8px 16px; border-radius: 999px;
-    border: 1px solid #c9c1b4; background: #fff; color: var(--ink); cursor: pointer;
+    border: 1px solid #2f3a48; background: var(--panel); color: var(--ink); cursor: pointer;
   }
   button:hover:not(:disabled) { border-color: var(--accent); }
   button:focus-visible, a:focus-visible { outline: 3px solid #f2b134; outline-offset: 2px; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #0d1117; }
   button:disabled { opacity: .4; cursor: default; }
   .dots { display: flex; flex-wrap: wrap; }
   .dots button { width: 28px; height: 28px; padding: 0; border: none; background: none; display: grid; place-items: center; }
-  .dots button::before { content: ""; width: 11px; height: 11px; border-radius: 50%; background: #8a8170; }
+  .dots button::before { content: ""; width: 11px; height: 11px; border-radius: 50%; background: #3a4554; }
   .dots button[aria-current="step"]::before { background: var(--accent); width: 15px; height: 15px; }
   .kicker { color: var(--accent); font-weight: 600; font-size: .85rem; letter-spacing: .05em; text-transform: uppercase; margin: 4px 0; }
   h2 { font: 600 2rem/1.2 Georgia, "Times New Roman", serif; margin: 0 0 14px; }
@@ -48,7 +48,7 @@
   blockquote p { margin: 0 0 6px; }
   blockquote cite { display: block; font: .85rem/1.4 system-ui, sans-serif; color: var(--muted); font-style: normal; }
   a { color: var(--accent); }
-  .cta { display: inline-block; margin-top: 6px; padding: 10px 18px; border-radius: 999px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+  .cta { display: inline-block; margin-top: 6px; padding: 10px 18px; border-radius: 999px; background: var(--accent); color: #0d1117; text-decoration: none; font-weight: 600; }
   footer { margin-top: 32px; padding-top: 16px; padding-bottom: 32px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
   footer p { margin: 0 0 6px; }
   @media (max-width: 820px) {
@@ -110,8 +110,8 @@ const BRUCE = p => `Bruce Baguley, memoir draft, p. ${p}`;
 const STEPS = [
   {
     title: "More questions than answers", scene: "dishes",
-    body: `<p>Bruce Baguley spent his career in cancer research. With Elaine Marshall he grew cells straight from patients’ tumours, and they did not behave like the cell lines that labs keep growing for years.</p>
-      <p>In some patients’ samples lots of cells were dividing. In others almost none were.</p>`,
+    body: `<p>Bruce Baguley is a cancer researcher in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines labs grow from them over three to twelve months.</p>
+      <p>In some samples lots of cells were dividing, and in others almost none.</p>`,
     quotes: [{ q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) }],
     cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing.",
     alt: "Two dishes of cells. The patient sample is mixed and mostly resting; the cell line is uniform and mostly dividing.",
@@ -126,7 +126,7 @@ const STEPS = [
   },
   {
     title: "The usual picture", scene: "immortal",
-    body: `<p>The usual explanation is that mutations let one family of tumour cells keep dividing forever, without ever running out.</p>`,
+    body: `<p>The usual explanation is that a mutation lets one family of tumour cells keep dividing forever.</p>`,
     quotes: [{ q: "This idea of immortalisation has become commonly accepted, the notion that tumour cells are different from normal cells because they mutate and continue to divide forever.", who: BRUCE(210) }],
     cap: "One family that never stops dividing. The dots get smaller as the count grows.",
     alt: "A single family of cells that keeps dividing and growing without limit.",
@@ -134,7 +134,7 @@ const STEPS = [
   {
     title: "Bruce’s idea: a relay of clones", scene: "relay",
     body: `<p>Bruce’s idea is that tumour cells are mortal, like healthy ones, and each family runs out in the end. The tumour keeps going because stem cells inside it take turns.</p>
-      <p>In Bruce’s picture, the difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly take up their job. The strip underneath shows which family holds the tumour over time.</p>`,
+      <p>The difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip underneath shows which family holds the tumour over time.</p>`,
     quotes: [
       { q: "The samples of the patients showed that the tumour cells actually behave more like normal tissue, which means that they are in fact mortal and won’t reproduce forever. But because of stem cells within the tumour cells (just like in normal healthy cells), they can renew themselves and there is a clonal succession in the tumour.", who: BRUCE(210) },
       { q: "We found that tumours are not composed of one cell lineage.", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
@@ -156,7 +156,7 @@ const STEPS = [
   {
     title: "It depends when you take the sample", scene: "sample",
     body: `<p>A surgical sample is a snapshot. Taken while a family is growing, it shows lots of cells dividing. Taken a little later, from the same tumour, it shows almost none.</p>
-      <p>That could explain why Elaine’s samples varied so much from one patient to the next.</p>`,
+      <p>That could explain why the samples Bruce and Elaine studied varied so much from one patient to the next.</p>`,
     quotes: [{ q: "…we need to pay attention to the stage that the tumour is in when we take the surgical sample. Sometimes it will be in its actively growing phase, other times the cell will have almost petered out…", who: BRUCE(211) }],
     cap: "A sample every few seconds. Each bar is the share of cells dividing at that moment.",
     alt: "Samples taken at regular intervals from the same relay show very different shares of dividing cells.",
@@ -172,7 +172,7 @@ const STEPS = [
   {
     title: "The ovary picks one at a time", scene: "ovary",
     body: `<p>In early conversations about this project, Bruce compared the stem cell niche to the ovary. Each cycle many follicles start to grow, but usually only one releases an egg.</p>
-      <p>A <a href="https://www.biorxiv.org/content/10.64898/2026.02.23.707552v1.full">2026 preprint</a>, not yet peer reviewed, proposes how it works, with nothing chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
+      <p>A <a href="https://www.biorxiv.org/content/10.64898/2026.02.23.707552v1.full">2026 preprint</a>, not yet peer reviewed, proposes a way it could work without any follicle being chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
       <p>Here two get picked about once in every 100 cycles.</p>`,
     quotes: [],
     cap: "Each follicle needs FSH above its own mark (the ticks on the bar). Thresholds are redrawn at random every cycle.",
@@ -191,14 +191,14 @@ const STEPS = [
 
 // ---------------------------------------------------------------- drawing helpers
 const W = 560, H = 440;
-const PAL = ["#c8553d", "#2e6f95", "#d9a227", "#3c8d6e", "#7a5195", "#c25b8a"];
+const PAL = ["#f72585", "#4cc9f0", "#ffd166", "#06d6a0", "#b892ff", "#ff8c42"];
 const famColour = f => PAL[((f % PAL.length) + PAL.length) % PAL.length];
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-function tint(hex, k) {             // mix towards white by k (0..1)
+function tint(hex, k) {             // mix towards the dark panel by k (0..1)
   const n = parseInt(hex.slice(1), 16);
-  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v + (255 - v) * k));
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v + ([21, 27, 36][i] - v) * k));
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 
@@ -234,7 +234,7 @@ function drawCell(ctx, x, y, r, colour, state, tumour, alpha, t) {
 let textScale = 1;
 function label(ctx, text, x, y, opts = {}) {
   ctx.font = `${opts.bold ? "600 " : ""}${Math.round((opts.size || 15) * textScale)}px system-ui, -apple-system, sans-serif`;
-  ctx.fillStyle = opts.colour || "#5b6670";
+  ctx.fillStyle = opts.colour || "#8b949e";
   ctx.textAlign = opts.align || "left";
   ctx.textBaseline = "middle";
   ctx.fillText(text, x, y);
@@ -252,8 +252,8 @@ function legend(ctx, tumour, rings) {
 function ring(ctx, x, y, state, fam, t) {
   ctx.lineWidth = state === "active" ? 3.5 : 2;
   ctx.setLineDash(state === "spent" ? [3, 3] : []);
-  ctx.strokeStyle = state === "active" ? famColour(fam) : state === "spent" ? "#c9c1b4" : "#8a949c";
-  ctx.fillStyle = state === "active" ? tint(famColour(fam), 0.7) : "#fff";
+  ctx.strokeStyle = state === "active" ? famColour(fam) : state === "spent" ? "#3a4554" : "#8b949e";
+  ctx.fillStyle = state === "active" ? tint(famColour(fam), 0.7) : "#151b24";
   const r = state === "active" ? 8 + Math.sin(t * 4) * 0.8 : 7;
   ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
   ctx.setLineDash([]);
@@ -368,7 +368,7 @@ class Relay {
     return occ ? hit / occ : 0;
   }
   draw(ctx) {
-    ctx.fillStyle = "#f4efe7";
+    ctx.fillStyle = "#1b2230";
     ctx.beginPath(); ctx.arc(this.cx, this.cy, this.R + 6, 0, 7); ctx.fill();
     for (const s of this.slots) {
       if (s.st === 0) continue;
@@ -379,7 +379,7 @@ class Relay {
   }
   drawStrip(ctx, x, y, w, h) {
     label(ctx, "Which family holds the tumour", x, y - 12, { size: 14 });
-    ctx.fillStyle = "#f4efe7"; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "#1b2230"; ctx.fillRect(x, y, w, h);
     const cw = w / 300;
     this.hist.forEach((fams, i) => {
       const total = Object.values(fams).reduce((a, b) => a + b, 0);
@@ -399,14 +399,14 @@ class Relay {
 
 function bars(ctx, values, x, y, w, h, title, n) {
   label(ctx, title, x, y - 12, { size: 14 });
-  ctx.strokeStyle = "#d8d0c3"; ctx.lineWidth = 1;
+  ctx.strokeStyle = "#2f3a48"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(x, y + h + 0.5); ctx.lineTo(x + w, y + h + 0.5); ctx.stroke();
   const bw = w / n;
   values.slice(-n).forEach((v, i) => {
     const bh = Math.max(1, (h - 16) * v);           // leave room for the % label under the title
     ctx.fillStyle = "#2e6f95";
     ctx.fillRect(x + i * bw + 4, y + h - bh, bw - 8, bh);
-    label(ctx, `${Math.round(v * 100)}%`, x + i * bw + bw / 2, y + h - bh - 8, { size: 13, align: "center", colour: "#1f2933" });
+    label(ctx, `${Math.round(v * 100)}%`, x + i * bw + bw / 2, y + h - bh - 8, { size: 13, align: "center", colour: "#e6edf3" });
   });
 }
 
@@ -433,9 +433,9 @@ const SCENES = {
       step: dt => { t += dt; },
       draw: ctx => {
         for (const [cells, cx, text] of [[L, 150, "Straight from a patient"], [Rt, 410, "Lab cell line"]]) {
-          ctx.fillStyle = "#f4efe7"; ctx.beginPath(); ctx.arc(cx, 200, 116, 0, 7); ctx.fill();
+          ctx.fillStyle = "#1b2230"; ctx.beginPath(); ctx.arc(cx, 200, 116, 0, 7); ctx.fill();
           for (const c of cells) drawCell(ctx, c.x, c.y, 9, famColour(c.fam), c.st, true, 1, t);
-          label(ctx, text, cx, 345, { align: "center", bold: true, size: 15, colour: "#1f2933" });
+          label(ctx, text, cx, 345, { align: "center", bold: true, size: 15, colour: "#e6edf3" });
           const share = cells.filter(c => c.st === 1).length / cells.length;
           label(ctx, `${Math.round(share * 100)}% dividing`, cx, 367, { align: "center" });
         }
@@ -461,9 +461,9 @@ const SCENES = {
       draw(ctx) {
         const R = 165, pts = disc(count, 280, 205, R * Math.min(1, Math.sqrt(count / 60)));
         const r = Math.min(10, 0.95 * R / Math.sqrt(Math.max(count, 60)));
-        ctx.fillStyle = "#f4efe7"; ctx.beginPath(); ctx.arc(280, 205, R + 8, 0, 7); ctx.fill();
+        ctx.fillStyle = "#1b2230"; ctx.beginPath(); ctx.arc(280, 205, R + 8, 0, 7); ctx.fill();
         for (const p of pts) drawCell(ctx, p.x, p.y, r, PAL[0], 1, true, 1, t);
-        label(ctx, `Cells: ${count.toLocaleString("en-NZ")}`, 280, 400, { align: "center", bold: true, size: 15, colour: "#1f2933" });
+        label(ctx, `Cells: ${count.toLocaleString("en-NZ")}`, 280, 400, { align: "center", bold: true, size: 15, colour: "#e6edf3" });
         label(ctx, count >= MAX ? "…and on, forever" : "Still dividing: all of them", 280, 422, { align: "center" });
         legend(ctx, true, false);
       },
@@ -525,7 +525,7 @@ const SCENES = {
         ctx.globalAlpha = 0.35; r.draw(ctx); ctx.globalAlpha = 1;
         r.ringPos.forEach((g, i) => ring(ctx, g.x, g.y, "dormant", 0, t));
         questionMark(ctx, r.cx, r.cy, 150, 0.75 + 0.15 * Math.sin(t * 2));
-        label(ctx, "Which one starts next, and what tells it to?", 280, 380, { align: "center", size: 15, colour: "#1f2933" });
+        label(ctx, "Which one starts next, and what tells it to?", 280, 380, { align: "center", size: 15, colour: "#e6edf3" });
       },
     };
   },
@@ -558,10 +558,10 @@ const SCENES = {
             r = 13 + 15 * near; a = 0.4 + 0.6 * near;
           }
           ctx.globalAlpha = a;
-          ctx.fillStyle = sel ? tint(PAL[2], 0.55) : "#f1e6d6";
-          ctx.strokeStyle = sel ? PAL[0] : "#b9a98f"; ctx.lineWidth = sel ? 3 : 1.5;
+          ctx.fillStyle = sel ? tint(PAL[2], 0.2) : "#2a2438";
+          ctx.strokeStyle = sel ? PAL[0] : "#6e6290"; ctx.lineWidth = sel ? 3 : 1.5;
           ctx.beginPath(); ctx.arc(fx(i), fy(i), r, 0, 7); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = sel ? PAL[0] : "#b9a98f";
+          ctx.fillStyle = sel ? PAL[0] : "#6e6290";
           ctx.beginPath(); ctx.arc(fx(i), fy(i), Math.max(3, r * 0.25), 0, 7); ctx.fill();
           ctx.globalAlpha = 1;
           if (sel && ov.phase === "release") {
@@ -572,17 +572,17 @@ const SCENES = {
         }
         // FSH and oestradiol bars
         const bx = 470;
-        ctx.fillStyle = "#f4efe7"; ctx.fillRect(bx, 60, 26, 330); ctx.fillRect(bx + 40, 60, 26, 330);
+        ctx.fillStyle = "#1b2230"; ctx.fillRect(bx, 60, 26, 330); ctx.fillRect(bx + 40, 60, 26, 330);
         ctx.fillStyle = "#2e6f95"; const fy0 = by(clamp(ov.F, 0.3, 1)); ctx.fillRect(bx, fy0, 26, 390 - fy0);
         ctx.fillStyle = PAL[4]; const eh = clamp(ov.E / FOLLICLE.eMax, 0, 1) * 330; ctx.fillRect(bx + 40, 390 - eh, 26, eh);
         for (let i = 0; i < N; i++) {
-          ctx.strokeStyle = ov.sel[i] ? PAL[0] : "#8a949c"; ctx.lineWidth = 3;
+          ctx.strokeStyle = ov.sel[i] ? PAL[0] : "#8b949e"; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.moveTo(bx - 12, by(ov.th[i])); ctx.lineTo(bx, by(ov.th[i])); ctx.stroke();
         }
-        label(ctx, "FSH", bx + 13, 46, { align: "center", bold: true, colour: "#1f2933" });
+        label(ctx, "FSH", bx + 13, 46, { align: "center", bold: true, colour: "#e6edf3" });
         label(ctx, "oestradiol", bx + 53, 405, { align: "center", size: 13 });
         label(ctx, "ticks: each follicle’s need", bx - 14, 405, { align: "right", size: 13 });
-        label(ctx, "Follicles", 50, 40, { bold: true, colour: "#1f2933" });
+        label(ctx, "Follicles", 50, 40, { bold: true, colour: "#e6edf3" });
         label(ctx, `Cycles: ${cycles}   Two picked: ${doubles}`, 50, 405);
       },
     };
