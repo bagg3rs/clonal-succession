@@ -112,7 +112,10 @@ const STEPS = [
     title: "More questions than answers", scene: "dishes",
     body: `<p>Bruce Baguley is a cancer researcher in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines labs grow from them over three to twelve months.</p>
       <p>In some samples lots of cells were dividing, and in others almost none.</p>`,
-    quotes: [{ q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) }],
+    quotes: [
+      { q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) },
+      { q: "We found that tumours are not composed of one cell lineage. The cells might look the same under the microscope, but they don’t function the same…", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
+    ],
     cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing.",
     alt: "Two dishes of cells. The patient sample is mixed and mostly resting; the cell line is uniform and mostly dividing.",
   },
@@ -137,7 +140,6 @@ const STEPS = [
       <p>The difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip underneath shows which family holds the tumour over time.</p>`,
     quotes: [
       { q: "The samples of the patients showed that the tumour cells actually behave more like normal tissue, which means that they are in fact mortal and won’t reproduce forever. But because of stem cells within the tumour cells (just like in normal healthy cells), they can renew themselves and there is a clonal succession in the tumour.", who: BRUCE(210) },
-      { q: "We found that tumours are not composed of one cell lineage.", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
     ],
     cap: "Hollow dots stopped dividing without finishing differentiating. The strip shows each family’s share of the tumour over the last minute.",
     alt: "Families of tumour cells take turns holding the tumour; a strip below shows the changing shares.",
