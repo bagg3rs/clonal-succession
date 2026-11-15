@@ -24,12 +24,16 @@ jobs:
         with:
           fetch-depth: 0
       
-      # No build step needed since this is a static site
-      
+      # No build step, but stage the site in its own folder: deploying from ./
+      # also copies the deploy action's temp folder into itself, and the
+      # recursion overflows the path limit.
+      - name: Stage site
+        run: rsync -a --exclude .git --exclude .github --exclude _site ./ _site/
+
       - name: Deploy PR Preview
         uses: rossjrw/pr-preview-action@v1
         with:
-          source-dir: ./
+          source-dir: _site
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: auto
