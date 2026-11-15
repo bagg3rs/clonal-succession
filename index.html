@@ -2,7 +2,7 @@
 <html lang="en-NZ">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Clonal succession: a walk through Bruce Baguley’s idea</title>
 <meta name="description" content="An animated walk through Bruce Baguley’s idea that tumours keep going as a relay of mortal clones, in his own words.">
 <style>
@@ -55,6 +55,20 @@
     body { font-size: 17px; }
     .stage { grid-template-columns: 1fr; gap: 16px; }
     h2 { font-size: 1.6rem; }
+    /* keep Back / Pause / Next in reach while reading the text below the picture */
+    .controls {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; margin: 0; justify-content: center;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: rgba(13, 17, 23, .95); border-top: 1px solid var(--line);
+    }
+    body { padding-bottom: 72px; }
+  }
+  @media (max-width: 480px) {
+    .dots { display: none; }      /* no room in the bar; the kicker says which step */
+  }
+  @supports not (inset: 0) {      /* iPadOS before 14.1 has no flex gap */
+    .controls > * + *, .textbar > * + * { margin-left: 8px; }
+    .site > * + * { margin-left: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
@@ -110,47 +124,50 @@ const BRUCE = p => `Bruce Baguley, memoir draft, p. ${p}`;
 const STEPS = [
   {
     title: "More questions than answers", scene: "dishes",
-    body: `<p>Bruce Baguley is a cancer researcher in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines labs grow from them over three to twelve months.</p>
+    body: `<p>Distinguished Emeritus Professor Bruce Baguley spent his career in cancer research in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines later developed from them, which takes three to twelve months.</p>
       <p>In some samples lots of cells were dividing, and in others almost none.</p>`,
-    quotes: [{ q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) }],
-    cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing.",
+    quotes: [
+      { q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) },
+      { q: "We found that tumours are not composed of one cell lineage. The cells might look the same under the microscope, but they don’t function the same…", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
+    ],
+    cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing. Illustration, not data.",
     alt: "Two dishes of cells. The patient sample is mixed and mostly resting; the cell line is uniform and mostly dividing.",
   },
   {
     title: "How healthy tissue renews itself", scene: "tissue",
-    body: `<p>Healthy tissue renews itself from stem cells that sit quietly most of the time. In the picture each ring is a stem cell.</p>
+    body: `<p>Healthy tissue renews itself from stem cells. In Bruce’s account, most of them sit quietly, and they take turns. In the picture each ring is a stem cell.</p>
       <p>When one starts, its family of cells grows, settles into doing the tissue’s work, and in time dies off. Then the next stem cell takes over.</p>`,
     quotes: [{ q: "…if you follow one particular stem cell, it produces a clone of cells and then eventually all those cells differentiate, and they sustain that tissue until they start to run out. When that happens, another stem cell sparks into life…", who: BRUCE(209) }],
-    cap: "Rings are stem cells. Paired dots are dividing; solid pale dots have finished differentiating. Each colour is one stem cell’s family.",
+    cap: "Rings are stem cells. Paired dots are dividing; solid pale dots have finished differentiating. Each colour is one stem cell’s family. A dashed ring has had its turn.",
     alt: "Stem cells around a patch of tissue take turns: one family grows, settles, dies off, and the next takes over.",
   },
   {
     title: "The usual picture", scene: "immortal",
-    body: `<p>The usual explanation is that a mutation lets one family of tumour cells keep dividing forever.</p>`,
+    body: `<p>The usual picture is that mutations let tumour cells escape the normal limit on division, so their descendants can keep dividing indefinitely.</p>`,
     quotes: [{ q: "This idea of immortalisation has become commonly accepted, the notion that tumour cells are different from normal cells because they mutate and continue to divide forever.", who: BRUCE(210) }],
-    cap: "One family that never stops dividing. The dots get smaller as the count grows.",
+    cap: "The usual picture at its simplest: one family that never stops dividing. The dots get smaller as the count grows.",
     alt: "A single family of cells that keeps dividing and growing without limit.",
   },
   {
     title: "Bruce’s idea: a relay of clones", scene: "relay",
     body: `<p>Bruce’s idea is that tumour cells are mortal, like healthy ones, and each family runs out in the end. The tumour keeps going because stem cells inside it take turns.</p>
-      <p>The difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip underneath shows which family holds the tumour over time.</p>`,
+      <p>In Bruce’s picture, the difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip under the picture shows which family holds the tumour over time.</p>`,
     quotes: [
       { q: "The samples of the patients showed that the tumour cells actually behave more like normal tissue, which means that they are in fact mortal and won’t reproduce forever. But because of stem cells within the tumour cells (just like in normal healthy cells), they can renew themselves and there is a clonal succession in the tumour.", who: BRUCE(210) },
-      { q: "We found that tumours are not composed of one cell lineage.", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
     ],
-    cap: "Hollow dots stopped dividing without finishing differentiating. The strip shows each family’s share of the tumour over the last minute.",
+    cap: "Hollow dots stopped dividing without finishing differentiating. The strip shows each family’s share of the tumour over the last minute. The tumour’s size is held fixed here to show the hand-over.",
     alt: "Families of tumour cells take turns holding the tumour; a strip below shows the changing shares.",
   },
   {
     title: "Why the same drug can work, then not", scene: "dose",
     body: `<p>Many older cancer drugs act mainly on cells that are dividing. If a tumour is a relay, how much a dose removes depends on where the relay has got to: a lot while a family is growing, very little once it has settled.</p>
+      <p>And if each new family has different properties, a drug chosen for one may not suit the next.</p>
       <p>Here each dose removes most of the cells that are dividing at that moment, and none of the others.</p>`,
     quotes: [
       { q: "Some samples may be dominated by cells that show as proliferating rapidly, and they are the ones seemingly sensitive to all drugs.", who: BRUCE(211) },
       { q: "…we can’t assume that what works on one colony of cells will work on the next.", who: BRUCE(210) },
     ],
-    cap: "A dose every few seconds. Each bar is the share of the tumour that dose removed.",
+    cap: "A dose every so often. Each bar is the share of the tumour that dose removed. Illustration, not data.",
     alt: "Doses given at regular intervals remove a large share of the tumour at some moments and almost none at others.",
   },
   {
@@ -158,28 +175,28 @@ const STEPS = [
     body: `<p>A surgical sample is a snapshot. Taken while a family is growing, it shows lots of cells dividing. Taken a little later, from the same tumour, it shows almost none.</p>
       <p>That could explain why the samples Bruce and Elaine studied varied so much from one patient to the next.</p>`,
     quotes: [{ q: "…we need to pay attention to the stage that the tumour is in when we take the surgical sample. Sometimes it will be in its actively growing phase, other times the cell will have almost petered out…", who: BRUCE(211) }],
-    cap: "A sample every few seconds. Each bar is the share of cells dividing at that moment.",
+    cap: "A sample every few seconds. Each bar is the share of cells dividing at that moment. Illustration, not data.",
     alt: "Samples taken at regular intervals from the same relay show very different shares of dividing cells.",
   },
   {
     title: "What wakes the next stem cell?", scene: "wake",
-    body: `<p>Something tells a quiet stem cell that it is time to start, and nobody yet knows what.</p>
-      <p>It could be a signal sent to each stem cell, holding it back until the active family fades. Or it could be a change in something they all draw on, such as room becoming free. With a billion cells in a tumour, a signal sent to each one has a long way to travel.</p>`,
+    body: `<p>If the relay is real, something must tell a quiet stem cell that it is time to start, and nobody yet knows what.</p>
+      <p>It could be a signal sent to each stem cell, holding it back until the active family fades. Or it could be a change in something they all draw on, such as room becoming free. A tumour a centimetre across holds around a billion cells, so a signal from the active family would have a long way to travel to reach every stem cell.</p>`,
     quotes: [{ q: "If we can get a mathematical grasp on it, this idea of alternating rates of proliferation of cells, we can develop a model that would help us understand the whole process better.", who: BRUCE(211) }],
-    cap: "No diagram of the options here, because this is the open question.",
+    cap: "No picture of the answer, because nobody has one yet.",
     alt: "Quiet stem cells around a tumour, with a question mark.",
   },
   {
     title: "The ovary picks one at a time", scene: "ovary",
     body: `<p>In early conversations about this project, Bruce compared the stem cell niche to the ovary. Each cycle many follicles start to grow, but usually only one releases an egg.</p>
-      <p>A <a href="https://pubmed.ncbi.nlm.nih.gov/42014065/">2026 paper in the Journal of the Royal Society Interface</a> proposes a way it could work without any follicle being chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
-      <p>Here two get picked about once in every 100 cycles.</p>`,
+      <p>A <a href="https://pubmed.ncbi.nlm.nih.gov/42014065/">2026 paper in the Journal of the Royal Society Interface</a> (Lyu and Kolomeisky) proposes a way it could work without any follicle being chosen in advance. Once FSH climbs to a critical level, one of the waiting follicles is picked at random. Its oestradiol quickly pulls FSH back down, so there is very little time for a second to be picked.</p>
+      <p>Here two get picked about once in every 100 cycles. Nobody knows whether anything like this happens in a tumour. It is here as an example of how one can be picked without a signal to each.</p>`,
     quotes: [],
-    cap: "Each follicle needs FSH above its own mark (the ticks on the bar). Thresholds are redrawn at random every cycle.",
-    alt: "Follicles grow as FSH rises; the first to reach its threshold is picked, FSH falls, and the rest shrink.",
+    cap: "When FSH reaches the threshold (the dashed line), one follicle is picked at random and FSH drops back below the line. Invented numbers.",
+    alt: "Follicles grow as FSH rises; when it reaches the threshold one follicle is picked at random, FSH falls, and the rest shrink.",
   },
   {
-    title: "So which is it in a tumour?", scene: "open",
+    title: "So does a tumour work like this?", scene: "open",
     body: `<p>If tumours do run as a relay, it matters for how drugs are tested and how samples are read. But it hasn’t been shown yet, and what wakes the next stem cell is still an open question.</p>
       <p>If you work on stem cells, tumour sampling or modelling and can see a way to test this, please get in touch.</p>`,
     quotes: [{ q: "For me this theory is very interesting, but the problem is how do you prove it, particularly using limited resources?", who: BRUCE(211) }],
@@ -240,10 +257,11 @@ function label(ctx, text, x, y, opts = {}) {
   ctx.fillText(text, x, y);
 }
 
-function legend(ctx, tumour, rings) {
+function legend(ctx, tumour, rings, dividingOnly) {
   const c = PAL[0];
   let y = 18;
   drawCell(ctx, 18, y, 7, c, 1, tumour, 1, 0); label(ctx, "dividing", 32, y); y += 22 * textScale;
+  if (dividingOnly) return;
   drawCell(ctx, 18, y, 7, c, 2, tumour, 1, 0);
   label(ctx, tumour ? "stopped, not finished" : "finished differentiating", 32, y); y += 22 * textScale;
   if (rings) { ring(ctx, 18, y, "dormant", 0, 0); label(ctx, "stem cell", 32, y); }
@@ -465,7 +483,7 @@ const SCENES = {
         for (const p of pts) drawCell(ctx, p.x, p.y, r, PAL[0], 1, true, 1, t);
         label(ctx, `Cells: ${count.toLocaleString("en-NZ")}`, 280, 400, { align: "center", bold: true, size: 15, colour: "#e6edf3" });
         label(ctx, count >= MAX ? "…and on, forever" : "Still dividing: all of them", 280, 422, { align: "center" });
-        legend(ctx, true, false);
+        legend(ctx, true, false, true);
       },
     };
   },
@@ -480,7 +498,7 @@ const SCENES = {
     return relayScene({}, {
       step(dt, r) {
         next -= dt; flash = Math.max(0, flash - dt);
-        if (next <= 0) { hits.push(r.dose()); if (hits.length > 8) hits.shift(); next = 9; flash = 0.5; }
+        if (next <= 0) { hits.push(r.dose()); if (hits.length > 5) hits.shift(); next = 22; flash = 0.5; }
       },
       draw(ctx, r) {
         if (flash > 0) {
@@ -490,7 +508,7 @@ const SCENES = {
           label(ctx, "dose", r.cx + r.R + 30, r.cy - r.R + 10, { bold: true, colour: "#2e6f95" });
         }
         label(ctx, `Dividing now: ${Math.round(r.dividingShare() * 100)}%`, 548, 18, { align: "right", size: 13 });
-        bars(ctx, hits, 30, 360, 500, 56, "Share removed by each dose", 8);
+        bars(ctx, hits, 30, 360, 500, 56, "Share removed by each dose", 5);
       },
     });
   },
@@ -553,15 +571,15 @@ const SCENES = {
           const sel = ov.sel[i];
           let r, a = 1;
           if (sel) r = 22 + 18 * clamp(ov.grow, 0, 1);
-          else {
-            const near = clamp((ov.F - (ov.th[i] - 0.3)) / 0.3, 0, 1);
-            r = 13 + 15 * near; a = 0.4 + 0.6 * near;
+          else {                                                // all waiting follicles grow alike
+            const near = clamp((ov.F - (FOLLICLE.th - 0.3)) / 0.3, 0, 1);
+            r = 13 + 13 * near; a = 0.7 + 0.3 * near;
           }
           ctx.globalAlpha = a;
           ctx.fillStyle = sel ? tint(PAL[2], 0.2) : "#2a2438";
-          ctx.strokeStyle = sel ? PAL[0] : "#6e6290"; ctx.lineWidth = sel ? 3 : 1.5;
+          ctx.strokeStyle = sel ? PAL[0] : "#9a8cc4"; ctx.lineWidth = sel ? 3 : 1.5;
           ctx.beginPath(); ctx.arc(fx(i), fy(i), r, 0, 7); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = sel ? PAL[0] : "#6e6290";
+          ctx.fillStyle = sel ? PAL[0] : "#9a8cc4";
           ctx.beginPath(); ctx.arc(fx(i), fy(i), Math.max(3, r * 0.25), 0, 7); ctx.fill();
           ctx.globalAlpha = 1;
           if (sel && ov.phase === "release") {
@@ -574,14 +592,14 @@ const SCENES = {
         const bx = 470;
         ctx.fillStyle = "#1b2230"; ctx.fillRect(bx, 60, 26, 330); ctx.fillRect(bx + 40, 60, 26, 330);
         ctx.fillStyle = "#2e6f95"; const fy0 = by(clamp(ov.F, 0.3, 1)); ctx.fillRect(bx, fy0, 26, 390 - fy0);
-        ctx.fillStyle = PAL[4]; const eh = clamp(ov.E / FOLLICLE.eMax, 0, 1) * 330; ctx.fillRect(bx + 40, 390 - eh, 26, eh);
-        for (let i = 0; i < N; i++) {
-          ctx.strokeStyle = ov.sel[i] ? PAL[0] : "#8b949e"; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(bx - 12, by(ov.th[i])); ctx.lineTo(bx, by(ov.th[i])); ctx.stroke();
-        }
+        ctx.fillStyle = PAL[4]; const eh = (ov.picked() ? clamp(0.5 + ov.grow, 0, 1) : 0) * 330; ctx.fillRect(bx + 40, 390 - eh, 26, eh);
+        const ty = by(FOLLICLE.th);                             // the one threshold, shared by all
+        ctx.strokeStyle = "#e6edf3"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(bx - 10, ty); ctx.lineTo(bx + 36, ty); ctx.stroke();
+        ctx.setLineDash([]);
+        label(ctx, "threshold", bx - 14, ty, { align: "right", size: 13, colour: "#e6edf3" });
         label(ctx, "FSH", bx + 13, 46, { align: "center", bold: true, colour: "#e6edf3" });
-        label(ctx, "oestradiol", bx + 53, 405, { align: "center", size: 13 });
-        label(ctx, "ticks: each follicle’s need", bx - 14, 405, { align: "right", size: 13 });
+        label(ctx, "oestradiol", W - 4, 405, { align: "right", size: 13 });
         label(ctx, "Follicles", 50, 40, { bold: true, colour: "#e6edf3" });
         label(ctx, `Cycles: ${cycles}   Two picked: ${doubles}`, 50, 405);
       },
@@ -594,35 +612,39 @@ const SCENES = {
 };
 
 // ---------------------------------------------------------------- follicle model start
-// After the 2026 bioRxiv model (10.64898/2026.02.23.707552): FSH rises; the first
-// follicle whose threshold it crosses is picked; that follicle's oestradiol pulls FSH
-// back down, so the rest fall short. Feedback is not instant, so very rarely a second
-// follicle crosses its threshold before FSH turns. Invented numbers, tuned so two are
-// picked about 1 cycle in 100 (tests/follicle-picks.js measures it).
-const FOLLICLE = { n: 10, lo: 0.55, hi: 0.95, f0: 0.4, rise: 0.08, eRate: 7.7, eMax: 0.25, floor: 0.32, dt: 0.002 };
+// After Lyu & Kolomeisky, J R Soc Interface 2026 (PMID 42014065): FSH rises; once it
+// reaches one critical threshold, shared by all follicles, one available follicle is
+// picked at random (here at rate k while FSH is at or above it). The picked follicle's
+// oestradiol pushes FSH back below the threshold almost at once, which leaves little
+// time for a second pick; FSH then drifts down to its floor. Invented numbers, tuned so
+// two are picked about 1 cycle in 100 (tests/follicle-picks.js measures it).
+const FOLLICLE = { n: 10, th: 0.75, f0: 0.4, rise: 0.08, k: 1.5, gap: 0.05,
+  eRate: 120, eHi: 14, eLo: 0.35, floor: 0.32, dt: 0.002 };
 
 class Ovary {
   constructor(P, rand) { this.P = P; this.rand = rand; this.reset(); }
   reset() {
-    const P = this.P;
-    this.th = Array.from({ length: P.n }, () => P.lo + this.rand() * (P.hi - P.lo));
-    this.sel = new Array(P.n).fill(false);
-    this.F = P.f0; this.E = 0; this.grow = 0; this.relT = 0; this.phase = "rise";
+    this.sel = new Array(this.P.n).fill(false);
+    this.F = this.P.f0; this.E = 0; this.grow = 0; this.relT = 0; this.phase = "rise";
   }
   picked() { return this.sel.filter(Boolean).length; }
   step() {                                    // one tick of P.dt; true when the cycle has finished
     const P = this.P, dt = P.dt;
     if (this.phase === "release") { this.relT += dt; return this.relT > 2; }
-    const any = this.picked() > 0;
-    if (any) { this.E = Math.min(P.eMax, this.E + P.eRate * dt); this.grow += dt / 3; }
-    const dF = P.rise - this.E;
-    this.F = Math.max(P.floor, this.F + dF * dt);
-    if (this.phase === "rise") {
-      for (let i = 0; i < P.n; i++) if (!this.sel[i] && this.F >= this.th[i]) this.sel[i] = true;
-      if (dF < 0) this.phase = "fall";
-    } else if (this.F <= P.floor) {
-      this.phase = "release";
+    if (this.picked()) {
+      // strong push while FSH is near the threshold, gentler once it is well below
+      const target = this.F > P.th - P.gap ? P.eHi : P.eLo;
+      this.E += (target - this.E) * Math.min(1, P.eRate * dt);
+      this.grow += dt / 3;
     }
+    this.F = Math.max(P.floor, this.F + (P.rise - this.E) * dt);
+    if (this.F >= P.th && this.rand() < P.k * dt) {
+      const free = [];
+      this.sel.forEach((s, i) => { if (!s) free.push(i); });
+      if (free.length) this.sel[free[Math.floor(this.rand() * free.length)]] = true;
+    }
+    if (this.picked() && this.F < P.th) this.phase = "fall";
+    if (this.phase === "fall" && this.F <= P.floor) this.phase = "release";
     return false;
   }
 }
@@ -655,7 +677,7 @@ if (typeof document !== "undefined") {
   const backBtn = $("back"), nextBtn = $("next"), pauseBtn = $("pause"), narrateBtn = $("narrate");
 
   let cur = 0, scene = null, paused = reduce, dirty = true, last = performance.now();
-  const rescale = () => { textScale = clamp(W / (canvas.clientWidth || W), 1, 1.3); dirty = true; };
+  const rescale = () => { textScale = clamp(W / (canvas.clientWidth || W), 1, 1.5); dirty = true; };
   rescale(); window.addEventListener("resize", rescale);
 
   const dots = STEPS.map((s, i) => {
@@ -701,8 +723,11 @@ if (typeof document !== "undefined") {
     if (was) startNarration();
   }
 
+  // With reduced motion the picture stays still, so while narrating the button pauses the voice only.
+  let voicePaused = false;
+  const isPaused = () => (narrating && reduce ? voicePaused : paused);
   function setPaused(p) {
-    paused = p;
+    if (narrating && reduce) voicePaused = p; else paused = p;
     pauseBtn.textContent = p ? "Play" : "Pause";
     if (!narrating) return;
     if (mode === "audio") p ? player.pause() : player.play().catch(() => {});
@@ -723,12 +748,12 @@ if (typeof document !== "undefined") {
 
   backBtn.addEventListener("click", () => go(cur - 1));
   nextBtn.addEventListener("click", () => go(cur + 1));
-  pauseBtn.addEventListener("click", () => setPaused(!paused));
+  pauseBtn.addEventListener("click", () => setPaused(!isPaused()));
   document.addEventListener("keydown", e => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === "ArrowRight" && cur < STEPS.length - 1) { go(cur + 1); e.preventDefault(); }
     else if (e.key === "ArrowLeft" && cur > 0) { go(cur - 1); e.preventDefault(); }
-    else if ((e.key === " " && !/^(BUTTON|A)$/.test(e.target.tagName)) || e.key === "p") { setPaused(!paused); e.preventDefault(); }
+    else if ((e.key === " " && !/^(BUTTON|A)$/.test(e.target.tagName)) || e.key === "p") { setPaused(!isPaused()); e.preventDefault(); }
   });
 
   // ------------------------------------------------ narration
@@ -744,12 +769,14 @@ if (typeof document !== "undefined") {
     player.src = `audio/step${cur + 1}.mp3`;
     player.play().catch(err => {
       // A refused play (autoplay rules) stops narration; a missing or broken file falls back to speech.
-      if (my !== token) return;
+      // AbortError just means Pause (or a new src) interrupted loading: not a failure.
+      if (my !== token || (err && err.name === "AbortError")) return;
       if (err && err.name === "NotAllowedError") stopNarration(); else fallBackToSpeech(my);
     });
   }
   function fallBackToSpeech(my) {
-    if (!narrating || my !== token) return;
+    // the error event and the rejected play() both report a broken file; act once
+    if (!narrating || my !== token || mode === "speech") return;
     if (!synth || !window.SpeechSynthesisUtterance) { stopNarration(); return; }
     mode = "speech";
     queue = sentencesFor(cur);
@@ -770,7 +797,12 @@ if (typeof document !== "undefined") {
     const s = STEPS[i], div = document.createElement("div");
     const parts = [s.title];
     div.innerHTML = s.body; div.querySelectorAll("p").forEach(p => parts.push(p.textContent));
-    for (const q of s.quotes) parts.push(`In ${q.elaine ? "Elaine Marshall’s" : "Bruce’s"} words: ${q.q.replace(/^…|…$/g, "")}`);
+    let prev = null;                              // a second quote from the same person: "And again"
+    for (const q of s.quotes) {
+      const who = q.elaine ? "Elaine Marshall’s" : "Bruce’s";
+      parts.push((who === prev ? "And again: " : "In " + who + " words: ") + q.q.replace(/^…|…$/g, ""));
+      prev = who;
+    }
     // every part must end a sentence, or the split below drops it (trimmed quotes end mid-sentence)
     const text = parts.map(p => p.trim()).map(p => /[.?!]["”’]?$/.test(p) ? p : p + ".").join(" ");
     // no lookbehind: older iPad Safari can't parse it, which would break the whole page
@@ -792,22 +824,19 @@ if (typeof document !== "undefined") {
   }
   function startNarration() {
     narrating = true; token++;
-    mode = "audio";                               // try the recordings again each time
+    mode = "audio";                               // try the recordings again each time;
+                                                  // a missing one falls back to speech in playStep
     narrateBtn.innerHTML = `<span aria-hidden="true">■ </span>Stop reading`;
-    if (paused && !reduce) { paused = false; pauseBtn.textContent = "Pause"; }
-    const my = token;
-    if (mode === "audio") { playStep(my); return; }  // play() straight from the tap, so iOS allows it
-    // Speak straight away so iOS keeps the tap's permission; Chrome can drop a speak()
-    // issued right after cancel(), so only wait when something was already speaking.
-    queue = sentencesFor(cur);
-    if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(() => speakNext(my), 50); }
-    else speakNext(my);
+    if (reduce) voicePaused = false; else paused = false;
+    pauseBtn.textContent = "Pause";
+    playStep(token);                              // play() straight from the tap, so iOS allows it
   }
   function stopNarration() {
     if (!narrating) return;
     narrating = false; token++;
     narrateBtn.innerHTML = `<span aria-hidden="true">🔊 </span>Read aloud`;
     player.pause();
+    pauseBtn.textContent = paused ? "Play" : "Pause";
     if (synth) { synth.cancel(); synth.resume(); }  // resume() clears a paused queue in Safari
   }
   // Narration is optional: nothing here may stop the page from rendering.

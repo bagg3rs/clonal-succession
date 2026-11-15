@@ -15,8 +15,12 @@ const sentence = s => (/[.?!]["”’]?$/.test(s) ? s : s + ".");
 const out = STEPS.map((s, i) => {
   const parts = [s.title];
   for (const p of s.body.split(/<\/p>/)) if (strip(p)) parts.push(strip(p));
-  for (const q of s.quotes)
-    parts.push(`In ${q.elaine ? "Elaine Marshall’s" : "Bruce’s"} words: ${q.q.replace(/^…|…$/g, "")}`);
+  let prev = null;                               // keep in step with sentencesFor() in index.html
+  for (const q of s.quotes) {
+    const who = q.elaine ? "Elaine Marshall’s" : "Bruce’s";
+    parts.push((who === prev ? "And again: " : "In " + who + " words: ") + q.q.replace(/^…|…$/g, ""));
+    prev = who;
+  }
   const text = parts.map(sentence).join(" ");
   return { step: i + 1, sentences: (text.match(/[^.?!]+[.?!]+["”’]?/g) || []).map(t => t.trim()) };
 });
