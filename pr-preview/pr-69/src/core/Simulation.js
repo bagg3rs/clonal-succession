@@ -1197,6 +1197,9 @@ class Simulation extends EventEmitter {
     // Render suppression wave effects
     this._renderSuppressionWaveEffects(suppressionLevel, activeClone);
     
+    // Render succession event effects
+    this._renderSuccessionEffects();
+    
     // Render activation progress for dormant stem cells
     this._renderStemCellActivationProgress();
     
@@ -1621,138 +1624,7 @@ class Simulation extends EventEmitter {
       parameters: { ...this.parameters }
     };
   }
-}
 
-// Export the Simulation class
-export default Simulation;
-        
-        // Draw activation progress ring with dynamic effects
-        const pulsePhase = stemCell.pulsePhase || 0;
-        const ringRadius = baseRadius + 4 + Math.sin(pulsePhase) * 2;
-        const glowIntensity = 0.3 + 0.7 * Math.sin(pulsePhase);
-        
-        // Draw activation progress arc
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = stemCell.getColor();
-        this.ctx.lineWidth = 2;
-        this.ctx.globalAlpha = glowIntensity;
-        this.ctx.arc(
-          position.x,
-          position.y,
-          ringRadius,
-          0,
-          Math.PI * 2 * progress // Arc length based on progress
-        );
-        this.ctx.stroke();
-        this.ctx.globalAlpha = 1.0;
-        
-        // Draw activation rays when progress is significant
-        if (progress > 0.5) {
-          const rayCount = 8;
-          const rayLength = baseRadius * (0.5 + progress * 0.5);
-          const rayOpacity = progress * glowIntensity;
-          
-          this.ctx.globalAlpha = rayOpacity;
-          this.ctx.strokeStyle = stemCell.getColor();
-          this.ctx.lineWidth = 1;
-          
-          for (let i = 0; i < rayCount; i++) {
-            const angle = (i / rayCount) * Math.PI * 2;
-            const startX = position.x + Math.cos(angle) * ringRadius;
-            const startY = position.y + Math.sin(angle) * ringRadius;
-            const endX = position.x + Math.cos(angle) * (ringRadius + rayLength);
-            const endY = position.y + Math.sin(angle) * (ringRadius + rayLength);
-            
-            this.ctx.beginPath();
-            this.ctx.moveTo(startX, startY);
-            this.ctx.lineTo(endX, endY);
-            this.ctx.stroke();
-          }
-          
-          this.ctx.globalAlpha = 1.0;
-        }
-        
-        // Add activation progress text for high progress
-        if (progress > 0.7) {
-          this.ctx.font = '10px Arial';
-          this.ctx.fillStyle = 'white';
-          this.ctx.textAlign = 'center';
-          this.ctx.textBaseline = 'middle';
-          this.ctx.fillText(
-            `${Math.round(progress * 100)}%`,
-            position.x,
-            position.y + baseRadius + 12
-          );
-        }
-        
-        // Add activation threshold indicator
-        const activationThreshold = this.stemCellManager.activationThreshold;
-        if (progress > activationThreshold * 0.8 && progress < activationThreshold) {
-          this.ctx.beginPath();
-          this.ctx.strokeStyle = 'yellow';
-          this.ctx.setLineDash([2, 2]);
-          this.ctx.lineWidth = 1;
-          this.ctx.arc(
-            position.x,
-            position.y,
-            ringRadius,
-            0,
-            Math.PI * 2
-          );
-          this.ctx.stroke();
-          this.ctx.setLineDash([]);
-        }
-      }
-      
-      // Add special visual effect for activating stem cells
-      if (stemCell.stemCellState === StemCell.States.ACTIVATING) {
-        const position = stemCell.body ? stemCell.body.position : { x: 0, y: 0 };
-        const baseRadius = 8; // Base stem cell radius
-        
-        // Create pulsing activation glow
-        const pulsePhase = stemCell.pulsePhase || 0;
-        const glowRadius = baseRadius * (2 + Math.sin(pulsePhase) * 0.5);
-        const glowOpacity = 0.2 + 0.3 * Math.sin(pulsePhase);
-        
-        // Draw activation glow
-        const gradient = this.ctx.createRadialGradient(
-          position.x, position.y, baseRadius,
-          position.x, position.y, glowRadius
-        );
-        
-        const cloneColor = this._getCloneColor(stemCell.clone);
-        gradient.addColorStop(0, `rgba(${this._hexToRgb(cloneColor)}, ${glowOpacity})`);
-        gradient.addColorStop(1, `rgba(${this._hexToRgb(cloneColor)}, 0)`);
-        
-        this.ctx.beginPath();
-        this.ctx.fillStyle = gradient;
-        this.ctx.arc(position.x, position.y, glowRadius, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Draw activation particles
-        const particleCount = 5;
-        const particleSize = 2;
-        const particleDistance = baseRadius * 2;
-        
-        this.ctx.fillStyle = cloneColor;
-        
-        for (let i = 0; i < particleCount; i++) {
-          const angle = pulsePhase + (i / particleCount) * Math.PI * 2;
-          const distance = particleDistance * (0.7 + 0.3 * Math.sin(pulsePhase + i));
-          const x = position.x + Math.cos(angle) * distance;
-          const y = position.y + Math.sin(angle) * distance;
-          
-          this.ctx.beginPath();
-          this.ctx.globalAlpha = glowOpacity;
-          this.ctx.arc(x, y, particleSize, 0, Math.PI * 2);
-          this.ctx.fill();
-        }
-        
-        this.ctx.globalAlpha = 1.0;
-      }
-    });
-  }
-  
   /**
    * Create visual effects for a succession event
    * @param {Object} details - Succession event details
@@ -1898,39 +1770,7 @@ export default Simulation;
     }
   }
   
-  /**
-   * Render the suppression field
-   * @private
-   */
-  _renderSuppressionField() {
-    if (!this.ctx) return;
-    
-    // Get suppression level from stem cell manager
-    const suppressionLevel = this.stemCellManager.getSuppressionLevel();
-    const activeClone = this.stemCellManager.getActiveClone();
-    
-    // Get active stem cells to render individual suppression fields
-    const activeStemCells = this.cellManager.getStemCells().filter(
-      cell => cell.isActive && cell.clone === activeClone
-    );
-    
-    // Render global suppression field
-    this._renderGlobalSuppressionField(suppressionLevel, activeClone);
-    
-    // Render individual suppression fields from active stem cells
-    activeStemCells.forEach(stemCell => {
-      this._renderIndividualSuppressionField(stemCell);
-    });
-    
-    // Render suppression wave effects
-    this._renderSuppressionWaveEffects(suppressionLevel, activeClone);
-    
-    // Render succession event effects
-    this._renderSuccessionEffects();
-    
-    // Render activation progress for dormant stem cells
-    this._renderStemCellActivationProgress();
-    
-    // Render suppression level indicator
-    this._renderSuppressionLevelIndicator(suppressionLevel, activeClone);
-  }
+}
+
+// Export the Simulation class
+export default Simulation;

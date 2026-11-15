@@ -381,11 +381,9 @@ class DataExporter {
     // Add to document
     document.head.appendChild(style);
   }
-}
 
-export default DataExporter;  /**
-  
- * Track an export operation in history
+  /**
+   * Track an export operation in history
    * @param {string} type - Type of export
    * @param {number} recordCount - Number of records exported
    * @private
@@ -828,3 +826,6 @@ export default DataExporter;  /**
     // Add to document
     document.head.appendChild(style);
   }
+}
+
+export default DataExporter;
