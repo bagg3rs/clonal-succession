@@ -797,7 +797,12 @@ if (typeof document !== "undefined") {
     const s = STEPS[i], div = document.createElement("div");
     const parts = [s.title];
     div.innerHTML = s.body; div.querySelectorAll("p").forEach(p => parts.push(p.textContent));
-    for (const q of s.quotes) parts.push(`In ${q.elaine ? "Elaine Marshall’s" : "Bruce’s"} words: ${q.q.replace(/^…|…$/g, "")}`);
+    let prev = null;                              // a second quote from the same person: "And again"
+    for (const q of s.quotes) {
+      const who = q.elaine ? "Elaine Marshall’s" : "Bruce’s";
+      parts.push((who === prev ? "And again: " : "In " + who + " words: ") + q.q.replace(/^…|…$/g, ""));
+      prev = who;
+    }
     // every part must end a sentence, or the split below drops it (trimmed quotes end mid-sentence)
     const text = parts.map(p => p.trim()).map(p => /[.?!]["”’]?$/.test(p) ? p : p + ".").join(" ");
     // no lookbehind: older iPad Safari can't parse it, which would break the whole page
