@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Single Row Controls Test</title>
+  <link rel="stylesheet" href="../animations/mobile-responsive.css">
+  <style>
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .red-stat { color: #ff4444; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="600"></canvas>
+
+  <div class="controls">
+    <button onclick="alert('Reset clicked')">🔄 Reset</button>
+    <button onclick="alert('Speed clicked')" id="speed-button">2x Speed</button>
+    
+    <div class="stat-item">
+      <div class="stat-value red-stat" id="total-count">100</div>
+      <div>Total Cells</div>
+    </div>
+  </div>
+
+  <script src="../animations/mobile-responsive.js"></script>
+  <script>
+    // Simple script to test the responsive behavior
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Test page loaded');
+    });
+  </script>
+</body>
+</html>
