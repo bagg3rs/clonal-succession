@@ -2,7 +2,7 @@ name: Deploy PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
     paths:
       - '**.html'
       - '**.js'
@@ -11,6 +11,12 @@ on:
       - 'animations/**'
       - 'tests/**'
       - 'images/**'
+      - 'audio/**'
+
+# One run per PR at a time.
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: false
 
 jobs:
   deploy-preview:
