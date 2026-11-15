@@ -93,7 +93,7 @@
 </main>
 
 <footer>
-  <p>The animations use invented numbers to show the shape of the idea. They are not measurements.</p>
+  <p>The animations use invented numbers to show the shape of the idea. They are not measurements. The narration is a computer-generated voice.</p>
   <p>Quotes are from Bruce Baguley’s memoir draft.
     <a href="v1.html">Previous front page</a> ·
     <a href="animations/clonal-succession-cycle.html">Full simulation</a> ·
@@ -172,7 +172,7 @@ const STEPS = [
   {
     title: "The ovary picks one at a time", scene: "ovary",
     body: `<p>In early conversations about this project, Bruce compared the stem cell niche to the ovary. Each cycle many follicles start to grow, but usually only one releases an egg.</p>
-      <p>A <a href="https://www.biorxiv.org/content/10.64898/2026.02.23.707552v1.full">2026 preprint</a>, not yet peer reviewed, proposes a way it could work without any follicle being chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
+      <p>A <a href="https://pubmed.ncbi.nlm.nih.gov/42014065/">2026 paper in the Journal of the Royal Society Interface</a> proposes a way it could work without any follicle being chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
       <p>Here two get picked about once in every 100 cycles.</p>`,
     quotes: [],
     cap: "Each follicle needs FSH above its own mark (the ticks on the bar). Thresholds are redrawn at random every cycle.",
@@ -704,7 +704,9 @@ if (typeof document !== "undefined") {
   function setPaused(p) {
     paused = p;
     pauseBtn.textContent = p ? "Play" : "Pause";
-    if (narrating) p ? synth.pause() : synth.resume();
+    if (!narrating) return;
+    if (mode === "audio") p ? player.pause() : player.play().catch(() => {});
+    else if (synth) p ? synth.pause() : synth.resume();
   }
 
   function frame(now) {
@@ -729,9 +731,37 @@ if (typeof document !== "undefined") {
     else if ((e.key === " " && !/^(BUTTON|A)$/.test(e.target.tagName)) || e.key === "p") { setPaused(!paused); e.preventDefault(); }
   });
 
-  // ------------------------------------------------ narration (browser speech, a sentence at a time)
+  // ------------------------------------------------ narration
+  // Recorded narration (audio/stepN.mp3, made by tools/make-narration.py) when it loads;
+  // otherwise the browser's own voice, a sentence at a time.
   const synth = window.speechSynthesis;
-  let narrating = false, voice = null, queue = [], token = 0, utterance = null;
+  const player = new Audio();
+  player.preload = "none";
+  let narrating = false, mode = "audio", voice = null, queue = [], token = 0, utterance = null;
+
+  function playStep(my) {
+    if (!narrating || my !== token) return;
+    player.src = `audio/step${cur + 1}.mp3`;
+    player.play().catch(err => {
+      // A refused play (autoplay rules) stops narration; a missing or broken file falls back to speech.
+      if (my !== token) return;
+      if (err && err.name === "NotAllowedError") stopNarration(); else fallBackToSpeech(my);
+    });
+  }
+  function fallBackToSpeech(my) {
+    if (!narrating || my !== token) return;
+    if (!synth || !window.SpeechSynthesisUtterance) { stopNarration(); return; }
+    mode = "speech";
+    queue = sentencesFor(cur);
+    speakNext(my);
+  }
+  player.addEventListener("ended", () => {
+    if (!narrating || mode !== "audio") return;
+    if (cur < STEPS.length - 1) { show(cur + 1, false); playStep(token); }
+    else stopNarration();
+  });
+  player.addEventListener("error", () => { if (narrating && mode === "audio" && player.src) fallBackToSpeech(token); });
+
   function pickVoice() {
     const vs = synth.getVoices();
     voice = vs.find(v => /^en[-_]NZ/i.test(v.lang)) || vs.find(v => /^en[-_]GB/i.test(v.lang)) || null;
@@ -762,11 +792,14 @@ if (typeof document !== "undefined") {
   }
   function startNarration() {
     narrating = true; token++;
+    mode = "audio";                               // try the recordings again each time
     narrateBtn.innerHTML = `<span aria-hidden="true">■ </span>Stop reading`;
-    if (paused && !reduce) setPaused(false);
+    if (paused && !reduce) { paused = false; pauseBtn.textContent = "Pause"; }
     const my = token;
+    if (mode === "audio") { playStep(my); return; }  // play() straight from the tap, so iOS allows it
     // Speak straight away so iOS keeps the tap's permission; Chrome can drop a speak()
     // issued right after cancel(), so only wait when something was already speaking.
+    queue = sentencesFor(cur);
     if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(() => speakNext(my), 50); }
     else speakNext(my);
   }
@@ -774,7 +807,8 @@ if (typeof document !== "undefined") {
     if (!narrating) return;
     narrating = false; token++;
     narrateBtn.innerHTML = `<span aria-hidden="true">🔊 </span>Read aloud`;
-    synth.cancel(); synth.resume();               // resume() clears a paused queue in Safari
+    player.pause();
+    if (synth) { synth.cancel(); synth.resume(); }  // resume() clears a paused queue in Safari
   }
   // Narration is optional: nothing here may stop the page from rendering.
   try {
@@ -782,9 +816,9 @@ if (typeof document !== "undefined") {
       pickVoice();
       if (synth.addEventListener) synth.addEventListener("voiceschanged", pickVoice);
       else synth.onvoiceschanged = pickVoice;
-      narrateBtn.hidden = false;
-      narrateBtn.addEventListener("click", () => narrating ? stopNarration() : startNarration());
     }
+    narrateBtn.hidden = false;
+    narrateBtn.addEventListener("click", () => narrating ? stopNarration() : startNarration());
   } catch (err) { narrateBtn.hidden = true; }
 
   const stepFromHash = () => { const m = location.hash.match(/^#step-(\d+)$/); return m ? Number(m[1]) - 1 : 0; };
