@@ -110,49 +110,50 @@ const BRUCE = p => `Bruce Baguley, memoir draft, p. ${p}`;
 const STEPS = [
   {
     title: "More questions than answers", scene: "dishes",
-    body: `<p>Bruce Baguley is a cancer researcher in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines labs grow from them over three to twelve months.</p>
+    body: `<p>Distinguished Emeritus Professor Bruce Baguley spent his career in cancer research in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines later developed from them, which takes three to twelve months.</p>
       <p>In some samples lots of cells were dividing, and in others almost none.</p>`,
     quotes: [
       { q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) },
       { q: "We found that tumours are not composed of one cell lineage. The cells might look the same under the microscope, but they don’t function the same…", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
     ],
-    cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing.",
+    cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing. Illustration, not data.",
     alt: "Two dishes of cells. The patient sample is mixed and mostly resting; the cell line is uniform and mostly dividing.",
   },
   {
     title: "How healthy tissue renews itself", scene: "tissue",
-    body: `<p>Healthy tissue renews itself from stem cells that sit quietly most of the time. In the picture each ring is a stem cell.</p>
+    body: `<p>Healthy tissue renews itself from stem cells. In Bruce’s account, most of them sit quietly, and they take turns. In the picture each ring is a stem cell.</p>
       <p>When one starts, its family of cells grows, settles into doing the tissue’s work, and in time dies off. Then the next stem cell takes over.</p>`,
     quotes: [{ q: "…if you follow one particular stem cell, it produces a clone of cells and then eventually all those cells differentiate, and they sustain that tissue until they start to run out. When that happens, another stem cell sparks into life…", who: BRUCE(209) }],
-    cap: "Rings are stem cells. Paired dots are dividing; solid pale dots have finished differentiating. Each colour is one stem cell’s family.",
+    cap: "Rings are stem cells. Paired dots are dividing; solid pale dots have finished differentiating. Each colour is one stem cell’s family. A dashed ring has had its turn.",
     alt: "Stem cells around a patch of tissue take turns: one family grows, settles, dies off, and the next takes over.",
   },
   {
     title: "The usual picture", scene: "immortal",
-    body: `<p>The usual explanation is that a mutation lets one family of tumour cells keep dividing forever.</p>`,
+    body: `<p>The usual picture is that mutations let tumour cells escape the normal limit on division, so their descendants can keep dividing indefinitely.</p>`,
     quotes: [{ q: "This idea of immortalisation has become commonly accepted, the notion that tumour cells are different from normal cells because they mutate and continue to divide forever.", who: BRUCE(210) }],
-    cap: "One family that never stops dividing. The dots get smaller as the count grows.",
+    cap: "The usual picture at its simplest: one family that never stops dividing. The dots get smaller as the count grows.",
     alt: "A single family of cells that keeps dividing and growing without limit.",
   },
   {
     title: "Bruce’s idea: a relay of clones", scene: "relay",
     body: `<p>Bruce’s idea is that tumour cells are mortal, like healthy ones, and each family runs out in the end. The tumour keeps going because stem cells inside it take turns.</p>
-      <p>The difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip underneath shows which family holds the tumour over time.</p>`,
+      <p>In Bruce’s picture, the difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip under the picture shows which family holds the tumour over time.</p>`,
     quotes: [
       { q: "The samples of the patients showed that the tumour cells actually behave more like normal tissue, which means that they are in fact mortal and won’t reproduce forever. But because of stem cells within the tumour cells (just like in normal healthy cells), they can renew themselves and there is a clonal succession in the tumour.", who: BRUCE(210) },
     ],
-    cap: "Hollow dots stopped dividing without finishing differentiating. The strip shows each family’s share of the tumour over the last minute.",
+    cap: "Hollow dots stopped dividing without finishing differentiating. The strip shows each family’s share of the tumour over the last minute. The tumour’s size is held fixed here to show the hand-over.",
     alt: "Families of tumour cells take turns holding the tumour; a strip below shows the changing shares.",
   },
   {
     title: "Why the same drug can work, then not", scene: "dose",
     body: `<p>Many older cancer drugs act mainly on cells that are dividing. If a tumour is a relay, how much a dose removes depends on where the relay has got to: a lot while a family is growing, very little once it has settled.</p>
+      <p>And if each new family has different properties, a drug chosen for one may not suit the next.</p>
       <p>Here each dose removes most of the cells that are dividing at that moment, and none of the others.</p>`,
     quotes: [
       { q: "Some samples may be dominated by cells that show as proliferating rapidly, and they are the ones seemingly sensitive to all drugs.", who: BRUCE(211) },
       { q: "…we can’t assume that what works on one colony of cells will work on the next.", who: BRUCE(210) },
     ],
-    cap: "A dose every few seconds. Each bar is the share of the tumour that dose removed.",
+    cap: "A dose every so often. Each bar is the share of the tumour that dose removed. Illustration, not data.",
     alt: "Doses given at regular intervals remove a large share of the tumour at some moments and almost none at others.",
   },
   {
@@ -160,15 +161,15 @@ const STEPS = [
     body: `<p>A surgical sample is a snapshot. Taken while a family is growing, it shows lots of cells dividing. Taken a little later, from the same tumour, it shows almost none.</p>
       <p>That could explain why the samples Bruce and Elaine studied varied so much from one patient to the next.</p>`,
     quotes: [{ q: "…we need to pay attention to the stage that the tumour is in when we take the surgical sample. Sometimes it will be in its actively growing phase, other times the cell will have almost petered out…", who: BRUCE(211) }],
-    cap: "A sample every few seconds. Each bar is the share of cells dividing at that moment.",
+    cap: "A sample every few seconds. Each bar is the share of cells dividing at that moment. Illustration, not data.",
     alt: "Samples taken at regular intervals from the same relay show very different shares of dividing cells.",
   },
   {
     title: "What wakes the next stem cell?", scene: "wake",
-    body: `<p>Something tells a quiet stem cell that it is time to start, and nobody yet knows what.</p>
-      <p>It could be a signal sent to each stem cell, holding it back until the active family fades. Or it could be a change in something they all draw on, such as room becoming free. With a billion cells in a tumour, a signal sent to each one has a long way to travel.</p>`,
+    body: `<p>If the relay is real, something must tell a quiet stem cell that it is time to start, and nobody yet knows what.</p>
+      <p>It could be a signal sent to each stem cell, holding it back until the active family fades. Or it could be a change in something they all draw on, such as room becoming free. A tumour a centimetre across holds around a billion cells, so a signal from the active family would have a long way to travel to reach every stem cell.</p>`,
     quotes: [{ q: "If we can get a mathematical grasp on it, this idea of alternating rates of proliferation of cells, we can develop a model that would help us understand the whole process better.", who: BRUCE(211) }],
-    cap: "No diagram of the options here, because this is the open question.",
+    cap: "No picture of the answer, because nobody has one yet.",
     alt: "Quiet stem cells around a tumour, with a question mark.",
   },
   {
@@ -181,7 +182,7 @@ const STEPS = [
     alt: "Follicles grow as FSH rises; when it reaches the threshold one follicle is picked at random, FSH falls, and the rest shrink.",
   },
   {
-    title: "So which is it in a tumour?", scene: "open",
+    title: "So does a tumour work like this?", scene: "open",
     body: `<p>If tumours do run as a relay, it matters for how drugs are tested and how samples are read. But it hasn’t been shown yet, and what wakes the next stem cell is still an open question.</p>
       <p>If you work on stem cells, tumour sampling or modelling and can see a way to test this, please get in touch.</p>`,
     quotes: [{ q: "For me this theory is very interesting, but the problem is how do you prove it, particularly using limited resources?", who: BRUCE(211) }],
