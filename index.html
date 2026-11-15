@@ -792,6 +792,7 @@ if (typeof document !== "undefined") {
   }
   function startNarration() {
     narrating = true; token++;
+    mode = "audio";                               // try the recordings again each time
     narrateBtn.innerHTML = `<span aria-hidden="true">■ </span>Stop reading`;
     if (paused && !reduce) { paused = false; pauseBtn.textContent = "Pause"; }
     const my = token;

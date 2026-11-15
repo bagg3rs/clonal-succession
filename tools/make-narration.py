@@ -61,14 +61,16 @@ def main() -> None:
                 pcm += chunk.audio_int16_bytes
             # a longer pause after the title
             pcm += gap * (2 if i == 0 else 1)
-        with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
-            with wave.open(tmp.name, "wb") as w:
+        # a temp folder, not NamedTemporaryFile: Windows won't let ffmpeg open a file we hold open
+        with tempfile.TemporaryDirectory() as tmpdir:
+            wav = str(Path(tmpdir) / f"step{n}.wav")
+            with wave.open(wav, "wb") as w:
                 w.setnchannels(1)
                 w.setsampwidth(2)
                 w.setframerate(rate)
                 w.writeframes(bytes(pcm))
             mp3 = out_dir / f"step{n}.mp3"
-            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", tmp.name,
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", wav,
                             "-ac", "1", "-b:a", "64k", str(mp3)], check=True)
         secs = len(pcm) / 2 / rate
         print(f"{mp3.relative_to(ROOT)}: {secs:.0f}s, {mp3.stat().st_size // 1024} KB", file=sys.stderr)
