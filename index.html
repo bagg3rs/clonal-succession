@@ -2,7 +2,7 @@
 <html lang="en-NZ">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Clonal succession: a walk through Bruce Baguley’s idea</title>
 <meta name="description" content="An animated walk through Bruce Baguley’s idea that tumours keep going as a relay of mortal clones, in his own words.">
 <style>
@@ -55,6 +55,20 @@
     body { font-size: 17px; }
     .stage { grid-template-columns: 1fr; gap: 16px; }
     h2 { font-size: 1.6rem; }
+    /* keep Back / Pause / Next in reach while reading the text below the picture */
+    .controls {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; margin: 0; justify-content: center;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: rgba(13, 17, 23, .95); border-top: 1px solid var(--line);
+    }
+    body { padding-bottom: 72px; }
+  }
+  @media (max-width: 480px) {
+    .dots { display: none; }      /* no room in the bar; the kicker says which step */
+  }
+  @supports not (inset: 0) {      /* iPadOS before 14.1 has no flex gap */
+    .controls > * + *, .textbar > * + * { margin-left: 8px; }
+    .site > * + * { margin-left: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
@@ -243,10 +257,11 @@ function label(ctx, text, x, y, opts = {}) {
   ctx.fillText(text, x, y);
 }
 
-function legend(ctx, tumour, rings) {
+function legend(ctx, tumour, rings, dividingOnly) {
   const c = PAL[0];
   let y = 18;
   drawCell(ctx, 18, y, 7, c, 1, tumour, 1, 0); label(ctx, "dividing", 32, y); y += 22 * textScale;
+  if (dividingOnly) return;
   drawCell(ctx, 18, y, 7, c, 2, tumour, 1, 0);
   label(ctx, tumour ? "stopped, not finished" : "finished differentiating", 32, y); y += 22 * textScale;
   if (rings) { ring(ctx, 18, y, "dormant", 0, 0); label(ctx, "stem cell", 32, y); }
@@ -468,7 +483,7 @@ const SCENES = {
         for (const p of pts) drawCell(ctx, p.x, p.y, r, PAL[0], 1, true, 1, t);
         label(ctx, `Cells: ${count.toLocaleString("en-NZ")}`, 280, 400, { align: "center", bold: true, size: 15, colour: "#e6edf3" });
         label(ctx, count >= MAX ? "…and on, forever" : "Still dividing: all of them", 280, 422, { align: "center" });
-        legend(ctx, true, false);
+        legend(ctx, true, false, true);
       },
     };
   },
@@ -483,7 +498,7 @@ const SCENES = {
     return relayScene({}, {
       step(dt, r) {
         next -= dt; flash = Math.max(0, flash - dt);
-        if (next <= 0) { hits.push(r.dose()); if (hits.length > 8) hits.shift(); next = 9; flash = 0.5; }
+        if (next <= 0) { hits.push(r.dose()); if (hits.length > 5) hits.shift(); next = 22; flash = 0.5; }
       },
       draw(ctx, r) {
         if (flash > 0) {
@@ -493,7 +508,7 @@ const SCENES = {
           label(ctx, "dose", r.cx + r.R + 30, r.cy - r.R + 10, { bold: true, colour: "#2e6f95" });
         }
         label(ctx, `Dividing now: ${Math.round(r.dividingShare() * 100)}%`, 548, 18, { align: "right", size: 13 });
-        bars(ctx, hits, 30, 360, 500, 56, "Share removed by each dose", 8);
+        bars(ctx, hits, 30, 360, 500, 56, "Share removed by each dose", 5);
       },
     });
   },
@@ -584,7 +599,7 @@ const SCENES = {
         ctx.setLineDash([]);
         label(ctx, "threshold", bx - 14, ty, { align: "right", size: 13, colour: "#e6edf3" });
         label(ctx, "FSH", bx + 13, 46, { align: "center", bold: true, colour: "#e6edf3" });
-        label(ctx, "oestradiol", bx + 53, 405, { align: "center", size: 13 });
+        label(ctx, "oestradiol", W - 4, 405, { align: "right", size: 13 });
         label(ctx, "Follicles", 50, 40, { bold: true, colour: "#e6edf3" });
         label(ctx, `Cycles: ${cycles}   Two picked: ${doubles}`, 50, 405);
       },
@@ -662,7 +677,7 @@ if (typeof document !== "undefined") {
   const backBtn = $("back"), nextBtn = $("next"), pauseBtn = $("pause"), narrateBtn = $("narrate");
 
   let cur = 0, scene = null, paused = reduce, dirty = true, last = performance.now();
-  const rescale = () => { textScale = clamp(W / (canvas.clientWidth || W), 1, 1.3); dirty = true; };
+  const rescale = () => { textScale = clamp(W / (canvas.clientWidth || W), 1, 1.5); dirty = true; };
   rescale(); window.addEventListener("resize", rescale);
 
   const dots = STEPS.map((s, i) => {
