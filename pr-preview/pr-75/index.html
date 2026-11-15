@@ -824,17 +824,12 @@ if (typeof document !== "undefined") {
   }
   function startNarration() {
     narrating = true; token++;
-    mode = "audio";                               // try the recordings again each time
+    mode = "audio";                               // try the recordings again each time;
+                                                  // a missing one falls back to speech in playStep
     narrateBtn.innerHTML = `<span aria-hidden="true">■ </span>Stop reading`;
     if (reduce) voicePaused = false; else paused = false;
     pauseBtn.textContent = "Pause";
-    const my = token;
-    if (mode === "audio") { playStep(my); return; }  // play() straight from the tap, so iOS allows it
-    // Speak straight away so iOS keeps the tap's permission; Chrome can drop a speak()
-    // issued right after cancel(), so only wait when something was already speaking.
-    queue = sentencesFor(cur);
-    if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(() => speakNext(my), 50); }
-    else speakNext(my);
+    playStep(token);                              // play() straight from the tap, so iOS allows it
   }
   function stopNarration() {
     if (!narrating) return;
