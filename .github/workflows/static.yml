@@ -1,20 +1,13 @@
-# Builds the static site on every PR and on pushes to main; deploys to GitHub
-# Pages only on pushes to main (or manual dispatch). PRs run the build job -
-# checkout, JS syntax check, configure-pages and upload-pages-artifact - so
-# changes to this workflow and its actions are verified before merge, but
-# nothing is ever deployed from a PR.
+# Checks the site on every PR; on pushes to main (or manual dispatch) publishes it
+# to the root of the gh-pages branch, which GitHub Pages serves. PR previews live
+# in gh-pages/pr-preview/ (see preview.yml), so the publish leaves that folder alone.
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
-
-  # Build-only verification for pull requests (no deploy)
   pull_request:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 permissions:
@@ -23,9 +16,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -35,30 +25,28 @@ jobs:
           node-version: 26
       - name: Syntax-check JavaScript
         run: git ls-files -z '*.js' | xargs -0 -n1 node --check
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          # Upload entire repository
-          path: '.'
 
   deploy:
     needs: build
     if: github.event_name != 'pull_request'
-    # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-    # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+    runs-on: ubuntu-latest
     concurrency:
-      group: "pages"
+      group: pages
       cancel-in-progress: false
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+      contents: write
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Checkout
+        uses: actions/checkout@v7
+      # Stage outside ./ so the deploy action's temp folder isn't copied into itself.
+      # .nojekyll: serve files as they are, without a Jekyll build.
+      - name: Stage site
+        run: |
+          rsync -a --exclude .git --exclude .github --exclude _site ./ _site/
+          touch _site/.nojekyll
+      - name: Publish to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site
+          clean-exclude: pr-preview/
