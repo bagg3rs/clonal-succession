@@ -172,11 +172,11 @@ const STEPS = [
   {
     title: "The ovary picks one at a time", scene: "ovary",
     body: `<p>In early conversations about this project, Bruce compared the stem cell niche to the ovary. Each cycle many follicles start to grow, but usually only one releases an egg.</p>
-      <p>A <a href="https://pubmed.ncbi.nlm.nih.gov/42014065/">2026 paper in the Journal of the Royal Society Interface</a> proposes a way it could work without any follicle being chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
-      <p>Here two get picked about once in every 100 cycles.</p>`,
+      <p>A <a href="https://pubmed.ncbi.nlm.nih.gov/42014065/">2026 paper in the Journal of the Royal Society Interface</a> (Lyu and Kolomeisky) proposes a way it could work without any follicle being chosen in advance. Once FSH climbs to a critical level, one of the waiting follicles is picked at random. Its oestradiol quickly pulls FSH back down, so there is very little time for a second to be picked.</p>
+      <p>Here two get picked about once in every 100 cycles. Nobody knows whether anything like this happens in a tumour. It is here as an example of how one can be picked without a signal to each.</p>`,
     quotes: [],
-    cap: "Each follicle needs FSH above its own mark (the ticks on the bar). Thresholds are redrawn at random every cycle.",
-    alt: "Follicles grow as FSH rises; the first to reach its threshold is picked, FSH falls, and the rest shrink.",
+    cap: "When FSH reaches the threshold (the dashed line), one follicle is picked at random and FSH drops back below the line. Invented numbers.",
+    alt: "Follicles grow as FSH rises; when it reaches the threshold one follicle is picked at random, FSH falls, and the rest shrink.",
   },
   {
     title: "So which is it in a tumour?", scene: "open",
@@ -553,15 +553,15 @@ const SCENES = {
           const sel = ov.sel[i];
           let r, a = 1;
           if (sel) r = 22 + 18 * clamp(ov.grow, 0, 1);
-          else {
-            const near = clamp((ov.F - (ov.th[i] - 0.3)) / 0.3, 0, 1);
-            r = 13 + 15 * near; a = 0.4 + 0.6 * near;
+          else {                                                // all waiting follicles grow alike
+            const near = clamp((ov.F - (FOLLICLE.th - 0.3)) / 0.3, 0, 1);
+            r = 13 + 13 * near; a = 0.7 + 0.3 * near;
           }
           ctx.globalAlpha = a;
           ctx.fillStyle = sel ? tint(PAL[2], 0.2) : "#2a2438";
-          ctx.strokeStyle = sel ? PAL[0] : "#6e6290"; ctx.lineWidth = sel ? 3 : 1.5;
+          ctx.strokeStyle = sel ? PAL[0] : "#9a8cc4"; ctx.lineWidth = sel ? 3 : 1.5;
           ctx.beginPath(); ctx.arc(fx(i), fy(i), r, 0, 7); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = sel ? PAL[0] : "#6e6290";
+          ctx.fillStyle = sel ? PAL[0] : "#9a8cc4";
           ctx.beginPath(); ctx.arc(fx(i), fy(i), Math.max(3, r * 0.25), 0, 7); ctx.fill();
           ctx.globalAlpha = 1;
           if (sel && ov.phase === "release") {
@@ -574,14 +574,14 @@ const SCENES = {
         const bx = 470;
         ctx.fillStyle = "#1b2230"; ctx.fillRect(bx, 60, 26, 330); ctx.fillRect(bx + 40, 60, 26, 330);
         ctx.fillStyle = "#2e6f95"; const fy0 = by(clamp(ov.F, 0.3, 1)); ctx.fillRect(bx, fy0, 26, 390 - fy0);
-        ctx.fillStyle = PAL[4]; const eh = clamp(ov.E / FOLLICLE.eMax, 0, 1) * 330; ctx.fillRect(bx + 40, 390 - eh, 26, eh);
-        for (let i = 0; i < N; i++) {
-          ctx.strokeStyle = ov.sel[i] ? PAL[0] : "#8b949e"; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(bx - 12, by(ov.th[i])); ctx.lineTo(bx, by(ov.th[i])); ctx.stroke();
-        }
+        ctx.fillStyle = PAL[4]; const eh = (ov.picked() ? clamp(0.5 + ov.grow, 0, 1) : 0) * 330; ctx.fillRect(bx + 40, 390 - eh, 26, eh);
+        const ty = by(FOLLICLE.th);                             // the one threshold, shared by all
+        ctx.strokeStyle = "#e6edf3"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(bx - 10, ty); ctx.lineTo(bx + 36, ty); ctx.stroke();
+        ctx.setLineDash([]);
+        label(ctx, "threshold", bx - 14, ty, { align: "right", size: 13, colour: "#e6edf3" });
         label(ctx, "FSH", bx + 13, 46, { align: "center", bold: true, colour: "#e6edf3" });
         label(ctx, "oestradiol", bx + 53, 405, { align: "center", size: 13 });
-        label(ctx, "ticks: each follicle’s need", bx - 14, 405, { align: "right", size: 13 });
         label(ctx, "Follicles", 50, 40, { bold: true, colour: "#e6edf3" });
         label(ctx, `Cycles: ${cycles}   Two picked: ${doubles}`, 50, 405);
       },
@@ -594,35 +594,39 @@ const SCENES = {
 };
 
 // ---------------------------------------------------------------- follicle model start
-// After the 2026 bioRxiv model (10.64898/2026.02.23.707552): FSH rises; the first
-// follicle whose threshold it crosses is picked; that follicle's oestradiol pulls FSH
-// back down, so the rest fall short. Feedback is not instant, so very rarely a second
-// follicle crosses its threshold before FSH turns. Invented numbers, tuned so two are
-// picked about 1 cycle in 100 (tests/follicle-picks.js measures it).
-const FOLLICLE = { n: 10, lo: 0.55, hi: 0.95, f0: 0.4, rise: 0.08, eRate: 7.7, eMax: 0.25, floor: 0.32, dt: 0.002 };
+// After Lyu & Kolomeisky, J R Soc Interface 2026 (PMID 42014065): FSH rises; once it
+// reaches one critical threshold, shared by all follicles, one available follicle is
+// picked at random (here at rate k while FSH is at or above it). The picked follicle's
+// oestradiol pushes FSH back below the threshold almost at once, which leaves little
+// time for a second pick; FSH then drifts down to its floor. Invented numbers, tuned so
+// two are picked about 1 cycle in 100 (tests/follicle-picks.js measures it).
+const FOLLICLE = { n: 10, th: 0.75, f0: 0.4, rise: 0.08, k: 1.5, gap: 0.05,
+  eRate: 120, eHi: 14, eLo: 0.35, floor: 0.32, dt: 0.002 };
 
 class Ovary {
   constructor(P, rand) { this.P = P; this.rand = rand; this.reset(); }
   reset() {
-    const P = this.P;
-    this.th = Array.from({ length: P.n }, () => P.lo + this.rand() * (P.hi - P.lo));
-    this.sel = new Array(P.n).fill(false);
-    this.F = P.f0; this.E = 0; this.grow = 0; this.relT = 0; this.phase = "rise";
+    this.sel = new Array(this.P.n).fill(false);
+    this.F = this.P.f0; this.E = 0; this.grow = 0; this.relT = 0; this.phase = "rise";
   }
   picked() { return this.sel.filter(Boolean).length; }
   step() {                                    // one tick of P.dt; true when the cycle has finished
     const P = this.P, dt = P.dt;
     if (this.phase === "release") { this.relT += dt; return this.relT > 2; }
-    const any = this.picked() > 0;
-    if (any) { this.E = Math.min(P.eMax, this.E + P.eRate * dt); this.grow += dt / 3; }
-    const dF = P.rise - this.E;
-    this.F = Math.max(P.floor, this.F + dF * dt);
-    if (this.phase === "rise") {
-      for (let i = 0; i < P.n; i++) if (!this.sel[i] && this.F >= this.th[i]) this.sel[i] = true;
-      if (dF < 0) this.phase = "fall";
-    } else if (this.F <= P.floor) {
-      this.phase = "release";
+    if (this.picked()) {
+      // strong push while FSH is near the threshold, gentler once it is well below
+      const target = this.F > P.th - P.gap ? P.eHi : P.eLo;
+      this.E += (target - this.E) * Math.min(1, P.eRate * dt);
+      this.grow += dt / 3;
     }
+    this.F = Math.max(P.floor, this.F + (P.rise - this.E) * dt);
+    if (this.F >= P.th && this.rand() < P.k * dt) {
+      const free = [];
+      this.sel.forEach((s, i) => { if (!s) free.push(i); });
+      if (free.length) this.sel[free[Math.floor(this.rand() * free.length)]] = true;
+    }
+    if (this.picked() && this.F < P.th) this.phase = "fall";
+    if (this.phase === "fall" && this.F <= P.floor) this.phase = "release";
     return false;
   }
 }
