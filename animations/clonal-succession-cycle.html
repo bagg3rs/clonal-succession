@@ -290,6 +290,11 @@
 
       destroy() {
         World.remove(world, this.body);
+        // drop any division link to this cell, or it would be drawn to where it was
+        constraints = constraints.filter(k => {
+          if (k.bodyA !== this.body && k.bodyB !== this.body) return true;
+          World.remove(world, k); return false;
+        });
         const i = cells.indexOf(this);
         if (i > -1) cells.splice(i, 1);
       }
