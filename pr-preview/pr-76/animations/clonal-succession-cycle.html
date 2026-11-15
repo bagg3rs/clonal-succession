@@ -1,160 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-NZ">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clonal Succession in Tumours - Main Simulation</title>
+  <title>Clonal succession: the full simulation</title>
   <link rel="stylesheet" href="mobile-responsive.css">
   <style>
-    .stat-value {
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .red-stat {
-      color: #ff4444;
-    }
-
-    .green-stat {
-      color: #44ff44;
-    }
-
-    .yellow-stat {
-      color: #ffff44;
-    }
-
-    .cage-stat {
-      color: #00e676;
-    }
-
-    .max-cells-stat {
-      color: #ffaa00;
-    }
-
-    .active-clone-stat {
-      color: #ffffff;
-    }
-
-    .time-stat {
-      color: #00aaff;
-    }
+    .stat-value { font-size: 24px; font-weight: bold; }
+    .family-stat { color: #4cc9f0; }
 
     button {
-      background: #333;
-      color: white;
-      border: 1px solid #555;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
+      background: #333; color: white; border: 1px solid #555;
+      padding: 8px 16px; border-radius: 4px; cursor: pointer;
     }
+    button:hover { background: #444; }
+    button:focus-visible { outline: 3px solid #f2b134; outline-offset: 2px; }
 
-    button:hover {
-      background: #444;
-    }
-
-    input[type="range"] {
-      width: 100px;
-    }
+    canvas { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 
     .note {
       max-width: 600px; margin: 4px auto 24px; padding: 0 12px;
       color: #aaa; font-size: 14px; line-height: 1.5; order: 2;
     }
-
     .note a { color: #4cc9f0; }
-
-    label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Additional responsive styles for direct viewing */
-    canvas {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-    }
+    .noscript { color: #f2b134; }
 
     @media (max-width: 768px) {
-
-      /* Keep controls in a row but allow wrapping */
-      .controls {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      .stat-value {
-        font-size: 20px;
-      }
-
-      button {
-        padding: 10px 16px;
-        font-size: 16px;
-      }
-
-      input[type="range"] {
-        width: 80px;
-      }
+      .controls { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+      .stat-value { font-size: 20px; }
+      button { padding: 10px 16px; font-size: 16px; }
     }
 
     @media (max-width: 480px) {
-      .stat-value {
-        font-size: 18px;
-      }
-
-      button {
-        padding: 8px 12px;
-        font-size: 14px;
-      }
-
-      .controls {
-        gap: 5px;
-        justify-content: space-around;
-      }
+      .stat-value { font-size: 18px; }
+      button { padding: 8px 12px; font-size: 14px; }
+      .controls { gap: 5px; justify-content: space-around; }
     }
   </style>
 </head>
 
 <body>
-  <canvas id="canvas" width="600" height="600"></canvas>
+  <canvas id="canvas" width="600" height="600" role="img"
+    aria-label="Animation: families of tumour cells grow, stop dividing and die off, one after another"></canvas>
 
   <div class="controls">
-    <button onclick="resetSimulation()">🔄 Reset</button>
-    <button onclick="cycleSpeed()" id="speed-button">2x Speed</button>
+    <button type="button" onclick="resetSimulation()">🔄 Reset</button>
+    <button type="button" onclick="togglePause()" id="pause-button">Pause</button>
+    <button type="button" onclick="cycleSpeed()" id="speed-button">Speed: 1x</button>
 
     <div class="stat-item">
       <div class="stat-value" id="total-count">1</div>
-      <div>Total Cells</div>
+      <div>Cells now</div>
     </div>
-    
+
     <div class="stat-item">
-      <div class="stat-value time-stat" id="simulation-time">Day 1, 00:00</div>
-      <div>Simulation Time</div>
+      <div class="stat-value family-stat" id="family-count">1</div>
+      <div>Family</div>
     </div>
   </div>
 
-  <p class="note">Red and green are two families of tumour cells, each grown from one stem cell. Bright: dividing. Pale: stopped dividing. White: about to die. The ring is the edge of the tumour. Each family has a limited number of divisions; the next one starts when the last has faded. What really starts it is unknown. Invented numbers. <a href="../index.html">Back to the walk-through</a></p>
+  <p class="note">Each colour is one family of tumour cells, grown from one stem cell (ringed while it lives).
+    Bright: dividing. Pale: stopped dividing without finishing differentiating. White, fading to grey: dying.
+    A family never comes back: each has a limited number of divisions, and in this model the next family
+    starts once the last has stopped dividing. That rule is invented; what really starts it is not known.
+    The numbers are invented too, and the swings in size come from them, not from Bruce’s idea.
+    <a href="../index.html">Back to the walk-through</a></p>
+  <noscript><p class="note noscript">The simulation needs JavaScript.</p></noscript>
 
-  <!-- Matter.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
-  <script src="mobile-responsive.js"></script>
-  <script src="time-tracking.js"></script>
-
+  <!-- Matter.js 0.20.0 (MIT), kept here so the page works offline -->
+  <script src="vendor/matter-0.20.0.min.js"></script>
 
   <script>
     // Clonal succession, physics version. Families of cells (clones) take turns:
     // each grows from one stem cell, has a limited number of divisions, matures
-    // (dividing → stopped → senescent) and dies. When the active family has faded,
-    // the next stem cell starts a new family. Invented numbers; what really starts
-    // the next family is the open question, so here it is simply "the last one faded".
+    // (dividing → stopped → dying) and dies. Once the active family has stopped
+    // dividing, a new stem cell starts the next family. Invented numbers; what
+    // really starts the next family is the open question.
     const { Engine, World, Bodies, Body, Constraint, Vector } = Matter;
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = 600 * dpr; canvas.height = 600 * dpr;
 
     const engine = Engine.create();
     const world = engine.world;
@@ -162,53 +90,60 @@
 
     // ---- parameters (invented)
     const CAGE_CENTER = { x: 300, y: 300 };
+    const ZOOM = 2;                // the model fits in ~150 px; draw it twice the size
     const CELL_RADIUS = 12;
     const MIN_CAGE_RADIUS = CELL_RADIUS + 4;
-    const MAX_CAGE_RADIUS = 280;
+    const MAX_CAGE_RADIUS = 146;
     const PACKING = 0.78;          // share of the disc the cells fill when packed
     const CAGE_EASE = 0.04;        // share of the gap to the target closed each step, growing or shrinking
     const MAX_CELLS = 100;
     const CLONE_DIVISIONS = 95;    // each family's division budget: it is mortal
-    const WAKE_AT = 0.9;           // next family starts once the last has no dividing cells and is below 90% of its peak
-    const COLOURS = {
-      red: { dividing: '#ff4444', 'non-dividing': '#ffaaaa', senescent: '#ffffff' },
-      green: { dividing: '#44ff44', 'non-dividing': '#aaffaa', senescent: '#ffffff' },
-    };
+    const STEP_MS = 1000 / 60;     // one model step; the clock keeps this rate on any screen
+    // one colour per family, as on the front page; families never reuse a live colour
+    const PAL = ['#f72585', '#4cc9f0', '#ffd166', '#06d6a0', '#b892ff', '#ff8c42'];
 
     let cells = [], constraints = [];
-    let CAGE_RADIUS = MIN_CAGE_RADIUS, targetCageRadius = MIN_CAGE_RADIUS;
+    let CAGE_RADIUS = MIN_CAGE_RADIUS;
     let simulationRunning = true, simulationSpeed = 1, frameCount = 0;
-    let activeClone = 'red', families = {};
+    let families = [], active = null;
 
-    let simulationTimeData = { totalFrames: 0, days: 1, hours: 0, minutes: 0, framesPerMinute: 10, lastSavedTime: null };
+    function mix(hex, k) {         // mix a colour towards white by k (0..1)
+      const n = parseInt(hex.slice(1), 16);
+      const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v + (255 - v) * k));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
 
-    // The cage is the edge of the tumour: just big enough for the cells it holds,
+    // The ring is the edge of the tumour: just big enough for the cells it holds,
     // so it widens as they divide and narrows as they die, at the same rate.
     function updateCage() {
       const fit = CELL_RADIUS * Math.sqrt(cells.length / PACKING) + 4;
-      targetCageRadius = Math.max(MIN_CAGE_RADIUS, Math.min(MAX_CAGE_RADIUS, fit));
-      CAGE_RADIUS += (targetCageRadius - CAGE_RADIUS) * CAGE_EASE;
+      const target = Math.max(MIN_CAGE_RADIUS, Math.min(MAX_CAGE_RADIUS, fit));
+      CAGE_RADIUS += (target - CAGE_RADIUS) * CAGE_EASE;
     }
 
-    function startFamily(clone) {
-      activeClone = clone;
-      families[clone] = { divisionsLeft: CLONE_DIVISIONS, peak: 1 };
+    function startFamily() {
+      const colour = PAL[families.length % PAL.length];
+      active = { n: families.length + 1, colour, pale: mix(colour, 0.55), divisionsLeft: CLONE_DIVISIONS, peak: 1 };
+      families.push(active);
+      document.getElementById('family-count').textContent = active.n;
       // the new stem cell sits somewhere inside the tumour
       const a = Math.random() * Math.PI * 2, r = Math.random() * Math.max(0, CAGE_RADIUS - CELL_RADIUS * 2);
-      cells.push(new Cell(CAGE_CENTER.x + Math.cos(a) * r, CAGE_CENTER.y + Math.sin(a) * r, clone));
+      const stem = new Cell(CAGE_CENTER.x + Math.cos(a) * r, CAGE_CENTER.y + Math.sin(a) * r, active);
+      stem.isStem = true;
+      cells.push(stem);
     }
 
     function checkClonalSuccession() {
       let total = 0, dividing = 0;
-      for (const c of cells) if (c.clone === activeClone) { total++; if (c.state === 'dividing') dividing++; }
-      const fam = families[activeClone];
-      fam.peak = Math.max(fam.peak, total);
-      if (dividing === 0 && total <= fam.peak * WAKE_AT) startFamily(activeClone === 'red' ? 'green' : 'red');
+      for (const c of cells) if (c.family === active) { total++; if (c.state === 'dividing') dividing++; }
+      active.peak = Math.max(active.peak, total);
+      if (dividing === 0) startFamily();
     }
 
     class Cell {
-      constructor(x, y, clone) {
-        this.clone = clone;
+      constructor(x, y, family) {
+        this.family = family;
+        this.isStem = false;
         this.age = 0;
         this.maxAge = 1000 + Math.random() * 500;
         this.cooldown = 25;          // a newborn waits before it can divide
@@ -220,17 +155,19 @@
         World.add(world, this.body);
       }
 
-      colour() { return COLOURS[this.clone][this.state]; }
+      colour() {
+        return this.state === 'dividing' ? this.family.colour
+          : this.state === 'non-dividing' ? this.family.pale : '#ffffff';
+      }
 
       update() {
         this.age++;
         if (this.cooldown > 0) this.cooldown--;
         if (this.state === 'dividing' && this.age > this.maxAge * 0.4) this.state = 'non-dividing';
         else if (this.state === 'non-dividing' && this.age > this.maxAge * 0.7) this.state = 'senescent';
-        if (this.state === 'senescent') this.age += 3;     // senescent cells die off quickly
+        if (this.state === 'senescent') this.age += 3;     // dying cells go quickly
         if (this.age > this.maxAge) { this.destroy(); return; }
         this.keepInside();
-        this.cohere();
         this.dampen();
       }
 
@@ -247,17 +184,6 @@
         }
       }
 
-      cohere() {
-        const me = this.body.position, ideal = CELL_RADIUS * 2.05, range = CELL_RADIUS * 4;
-        for (const o of cells) {
-          if (o === this) continue;
-          const delta = Vector.sub(o.body.position, me), d = Vector.magnitude(delta);
-          if (d === 0) continue;
-          if (d < range && d > ideal) Body.applyForce(this.body, me, Vector.mult(Vector.normalise(delta), 0.0004));
-          else if (d < ideal * 0.9) Body.applyForce(this.body, me, Vector.mult(Vector.normalise(delta), -0.0001));
-        }
-      }
-
       dampen() {
         const v = this.body.velocity;
         if (Vector.magnitude(v) > 2) Body.setVelocity(this.body, Vector.mult(v, 0.8));
@@ -265,14 +191,14 @@
       }
 
       divide() {
-        const fam = families[this.clone];
-        if (this.state !== 'dividing' || this.cooldown > 0 || cells.length >= MAX_CELLS) return null;
-        if (!fam || fam.divisionsLeft <= 0) { this.state = 'non-dividing'; return null; }   // budget spent
+        const fam = this.family;
+        if (this.state !== 'dividing' || this.cooldown > 0) return null;
+        if (fam.divisionsLeft <= 0) { this.state = 'non-dividing'; return null; }   // budget spent
         fam.divisionsLeft--;
         this.cooldown = 50;
         this.dividingUntil = frameCount + 48;
 
-        // place the daughter next to the parent, inside the cage if possible
+        // place the daughter next to the parent, inside the edge if possible
         const pos = this.body.position, dist = CELL_RADIUS * 2.02;
         let nx, ny;
         for (let i = 0; i < 9; i++) {
@@ -280,7 +206,7 @@
           nx = pos.x + Math.cos(a) * dist; ny = pos.y + Math.sin(a) * dist;
           if (Math.hypot(nx - CAGE_CENTER.x, ny - CAGE_CENTER.y) <= CAGE_RADIUS - CELL_RADIUS - 2) break;
         }
-        const baby = new Cell(nx, ny, this.clone);
+        const baby = new Cell(nx, ny, fam);
         const constraint = Constraint.create({ bodyA: this.body, bodyB: baby.body, length: CELL_RADIUS * 2.05, stiffness: 0.6, damping: 0.8 });
         constraint.until = frameCount + 120;
         World.add(world, constraint);
@@ -290,49 +216,75 @@
 
       destroy() {
         World.remove(world, this.body);
-        // drop any division link to this cell, or it would be drawn to where it was
-        constraints = constraints.filter(k => {
-          if (k.bodyA !== this.body && k.bodyB !== this.body) return true;
-          World.remove(world, k); return false;
-        });
+        // drop any division link to this cell
+        if (constraints.some(k => k.bodyA === this.body || k.bodyB === this.body)) {
+          constraints = constraints.filter(k => {
+            if (k.bodyA !== this.body && k.bodyB !== this.body) return true;
+            World.remove(world, k); return false;
+          });
+        }
         const i = cells.indexOf(this);
         if (i > -1) cells.splice(i, 1);
       }
     }
 
+    // Cells drift together and keep a little apart: one pass over each pair, no allocations.
+    function cohereAll() {
+      const ideal = CELL_RADIUS * 2.05, range2 = Math.pow(CELL_RADIUS * 4, 2);
+      for (let i = 0; i < cells.length; i++) {
+        const a = cells[i].body;
+        for (let j = i + 1; j < cells.length; j++) {
+          const b = cells[j].body;
+          const dx = b.position.x - a.position.x, dy = b.position.y - a.position.y, d2 = dx * dx + dy * dy;
+          if (d2 === 0 || d2 >= range2) continue;
+          const d = Math.sqrt(d2), f = d > ideal ? 0.0004 : d < ideal * 0.9 ? -0.0001 : 0;
+          if (!f) continue;
+          const fx = dx / d * f, fy = dy / d * f;
+          a.force.x += fx; a.force.y += fy; b.force.x -= fx; b.force.y -= fy;
+        }
+      }
+    }
+
     function initializeSimulation() {
       World.clear(world, false);
-      cells = []; constraints = []; families = {};
-      CAGE_RADIUS = targetCageRadius = MIN_CAGE_RADIUS;
+      cells = []; constraints = []; families = [];
+      CAGE_RADIUS = MIN_CAGE_RADIUS;
       frameCount = 0;
-      startFamily('red');
-      resetTime();
+      startFamily();
     }
 
     function divideCells() {
-      if (cells.length >= MAX_CELLS) return;
-      const p = cells.length < 10 ? 0.02 : 0.008;      // faster at first so the start isn't slow
       const born = [];
       for (const c of cells) {
+        if (cells.length + born.length >= MAX_CELLS) break;
+        // a young family divides faster, so each one gets going as briskly as the first
+        const p = c.family.peak < 10 ? 0.02 : 0.008;
         if (c.age > 25 && Math.random() < p) { const b = c.divide(); if (b) born.push(b); }
       }
-      cells.push(...born);
+      for (const b of born) cells.push(b);
     }
 
     function step() {                                   // one tick of the model
-      Engine.update(engine, 1000 / 60);
-      for (const c of cells.slice()) c.update();
+      for (let i = cells.length - 1; i >= 0; i--) cells[i].update();
+      cohereAll();
+      Engine.update(engine, STEP_MS);
       divideCells();
       checkClonalSuccession();
       updateCage();
-      constraints = constraints.filter(k => { if (frameCount < k.until) return true; World.remove(world, k); return false; });
+      if (constraints.length && constraints[0].until <= frameCount) {
+        constraints = constraints.filter(k => { if (frameCount < k.until) return true; World.remove(world, k); return false; });
+      }
       frameCount++;
     }
 
     function drawCells() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = cells.length >= MAX_CELLS ? '#ffaa00' : '#00e676';
-      ctx.lineWidth = 3;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, 600, 600);
+      // zoom in about the centre
+      ctx.setTransform(ZOOM * dpr, 0, 0, ZOOM * dpr, -300 * (ZOOM - 1) * dpr, -300 * (ZOOM - 1) * dpr);
+
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(CAGE_CENTER.x, CAGE_CENTER.y, CAGE_RADIUS, 0, Math.PI * 2); ctx.stroke();
 
       for (const cell of cells) {
@@ -343,51 +295,57 @@
         if (frameCount < cell.dividingUntil) radius *= 1 + 0.08 * Math.sin(frameCount * 0.4);
         ctx.globalAlpha = cell.age > cell.maxAge * 0.8                           // dying cells fade
           ? Math.max(0.3, 1 - 0.7 * (cell.age - cell.maxAge * 0.8) / (cell.maxAge * 0.2)) : 1;
-        ctx.fillStyle = ctx.strokeStyle = cell.colour();
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = cell.colour();
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2); ctx.fill();
+        if (cell.isStem) {                                                       // the founding stem cell
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(pos.x, pos.y, radius + 2.5, 0, Math.PI * 2); ctx.stroke();
+        }
       }
       ctx.globalAlpha = 1;
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      for (const k of constraints) {
-        ctx.beginPath(); ctx.moveTo(k.bodyA.position.x, k.bodyA.position.y); ctx.lineTo(k.bodyB.position.x, k.bodyB.position.y); ctx.stroke();
-      }
     }
 
-    function gameLoop() {
-      if (simulationRunning) {
-        // faster speeds run more model steps per frame, so growth and ageing speed up too
-        for (let i = 0; i < simulationSpeed; i++) step();
+    // Fixed-rate clock: the model runs at 60 steps a second (times the speed) whatever the
+    // screen's refresh rate, and catches up at most a few steps after a stall.
+    let last = performance.now(), acc = 0;
+    function gameLoop(now) {
+      acc += Math.min(now - last, 100); last = now;
+      let ran = false;
+      while (acc >= STEP_MS) {
+        if (simulationRunning) { for (let i = 0; i < simulationSpeed; i++) step(); ran = true; }
+        acc -= STEP_MS;
+      }
+      if (ran) {
         drawCells();
         document.getElementById('total-count').textContent = cells.length;
-        updateSimulationTime();
       }
       requestAnimationFrame(gameLoop);
     }
 
-    function resetSimulation() { initializeSimulation(); }
+    function resetSimulation() { initializeSimulation(); drawCells(); }
 
-    function cycleSpeed() {                             // 1x → 2x → 4x → 1x
+    function togglePause() {
+      simulationRunning = !simulationRunning;
+      document.getElementById('pause-button').textContent = simulationRunning ? 'Pause' : 'Play';
+    }
+
+    function cycleSpeed() {                             // 1x → 2x → 4x → 1x; the label shows the current speed
       simulationSpeed = simulationSpeed === 1 ? 2 : simulationSpeed === 2 ? 4 : 1;
-      const next = simulationSpeed === 1 ? 2 : simulationSpeed === 2 ? 4 : 1;
-      document.getElementById('speed-button').textContent = `${next}x Speed`;
+      document.getElementById('speed-button').textContent = `Speed: ${simulationSpeed}x`;
     }
 
-    function makeCanvasResponsive() {
-      function resizeCanvas() {
-        const w = Math.min(document.body.clientWidth - 20, 600);
-        canvas.style.width = w + 'px';
-        canvas.style.height = w + 'px';
-      }
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-      window.addEventListener('message', e => { if (e.data && e.data.type === 'resize') resizeCanvas(); });
+    function resizeCanvas() {
+      const w = Math.max(200, Math.min(document.body.clientWidth - 20, window.innerHeight * 0.7, 600));
+      canvas.style.width = w + 'px';
+      canvas.style.height = w + 'px';
     }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('message', e => { if (e.data && e.data.type === 'resize') resizeCanvas(); });
 
-    makeCanvasResponsive();
     initializeSimulation();
-    gameLoop();
+    drawCells();
+    requestAnimationFrame(gameLoop);
   </script>
 </body>
 
