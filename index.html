@@ -705,8 +705,11 @@ if (typeof document !== "undefined") {
     if (was) startNarration();
   }
 
+  // With reduced motion the picture stays still, so while narrating the button pauses the voice only.
+  let voicePaused = false;
+  const isPaused = () => (narrating && reduce ? voicePaused : paused);
   function setPaused(p) {
-    paused = p;
+    if (narrating && reduce) voicePaused = p; else paused = p;
     pauseBtn.textContent = p ? "Play" : "Pause";
     if (!narrating) return;
     if (mode === "audio") p ? player.pause() : player.play().catch(() => {});
@@ -727,12 +730,12 @@ if (typeof document !== "undefined") {
 
   backBtn.addEventListener("click", () => go(cur - 1));
   nextBtn.addEventListener("click", () => go(cur + 1));
-  pauseBtn.addEventListener("click", () => setPaused(!paused));
+  pauseBtn.addEventListener("click", () => setPaused(!isPaused()));
   document.addEventListener("keydown", e => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === "ArrowRight" && cur < STEPS.length - 1) { go(cur + 1); e.preventDefault(); }
     else if (e.key === "ArrowLeft" && cur > 0) { go(cur - 1); e.preventDefault(); }
-    else if ((e.key === " " && !/^(BUTTON|A)$/.test(e.target.tagName)) || e.key === "p") { setPaused(!paused); e.preventDefault(); }
+    else if ((e.key === " " && !/^(BUTTON|A)$/.test(e.target.tagName)) || e.key === "p") { setPaused(!isPaused()); e.preventDefault(); }
   });
 
   // ------------------------------------------------ narration
@@ -748,12 +751,14 @@ if (typeof document !== "undefined") {
     player.src = `audio/step${cur + 1}.mp3`;
     player.play().catch(err => {
       // A refused play (autoplay rules) stops narration; a missing or broken file falls back to speech.
-      if (my !== token) return;
+      // AbortError just means Pause (or a new src) interrupted loading: not a failure.
+      if (my !== token || (err && err.name === "AbortError")) return;
       if (err && err.name === "NotAllowedError") stopNarration(); else fallBackToSpeech(my);
     });
   }
   function fallBackToSpeech(my) {
-    if (!narrating || my !== token) return;
+    // the error event and the rejected play() both report a broken file; act once
+    if (!narrating || my !== token || mode === "speech") return;
     if (!synth || !window.SpeechSynthesisUtterance) { stopNarration(); return; }
     mode = "speech";
     queue = sentencesFor(cur);
@@ -798,7 +803,8 @@ if (typeof document !== "undefined") {
     narrating = true; token++;
     mode = "audio";                               // try the recordings again each time
     narrateBtn.innerHTML = `<span aria-hidden="true">■ </span>Stop reading`;
-    if (paused && !reduce) { paused = false; pauseBtn.textContent = "Pause"; }
+    if (reduce) voicePaused = false; else paused = false;
+    pauseBtn.textContent = "Pause";
     const my = token;
     if (mode === "audio") { playStep(my); return; }  // play() straight from the tap, so iOS allows it
     // Speak straight away so iOS keeps the tap's permission; Chrome can drop a speak()
@@ -812,6 +818,7 @@ if (typeof document !== "undefined") {
     narrating = false; token++;
     narrateBtn.innerHTML = `<span aria-hidden="true">🔊 </span>Read aloud`;
     player.pause();
+    pauseBtn.textContent = paused ? "Play" : "Pause";
     if (synth) { synth.cancel(); synth.resume(); }  // resume() clears a paused queue in Safari
   }
   // Narration is optional: nothing here may stop the page from rendering.
