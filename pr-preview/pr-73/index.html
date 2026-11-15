@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clonal succession: a walk through Bruce Baguley’s idea</title>
+<meta name="description" content="An animated walk through Bruce Baguley’s idea that tumours keep going as a relay of mortal clones, in his own words.">
+<style>
+  :root {
+    --ink: #e6edf3; --muted: #8b949e; --bg: #0d1117; --panel: #151b24;
+    --line: #232c38; --accent: #4cc9f0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 18px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink); background: var(--bg);
+  }
+  .site, main, footer { max-width: 1180px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+  .site { padding-top: 20px; display: flex; justify-content: space-between; align-items: baseline; gap: 4px 16px; flex-wrap: wrap; }
+  .site h1 { font: 600 1.15rem/1.3 Georgia, "Times New Roman", serif; margin: 0; }
+  .site p { margin: 0; color: var(--muted); font-size: .95rem; }
+  main { padding-top: 16px; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  canvas { display: block; width: 100%; height: auto; aspect-ratio: 560 / 440; }
+  figcaption { font-size: .85rem; color: var(--muted); padding: 6px 4px 0; min-height: 3.2em; }
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0 0; }
+  .textbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .textbar button { padding: 4px 12px; font-size: .85rem; }
+  button {
+    font: inherit; font-size: .95rem; padding: 8px 16px; border-radius: 999px;
+    border: 1px solid #2f3a48; background: var(--panel); color: var(--ink); cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:focus-visible, a:focus-visible { outline: 3px solid #f2b134; outline-offset: 2px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #0d1117; }
+  button:disabled { opacity: .4; cursor: default; }
+  .dots { display: flex; flex-wrap: wrap; }
+  .dots button { width: 28px; height: 28px; padding: 0; border: none; background: none; display: grid; place-items: center; }
+  .dots button::before { content: ""; width: 11px; height: 11px; border-radius: 50%; background: #3a4554; }
+  .dots button[aria-current="step"]::before { background: var(--accent); width: 15px; height: 15px; }
+  .kicker { color: var(--accent); font-weight: 600; font-size: .85rem; letter-spacing: .05em; text-transform: uppercase; margin: 4px 0; }
+  h2 { font: 600 2rem/1.2 Georgia, "Times New Roman", serif; margin: 0 0 14px; }
+  h2:focus { outline: none; }
+  .text p { margin: 0 0 12px; }
+  blockquote { margin: 18px 0; padding: 2px 0 2px 18px; border-left: 4px solid var(--accent); font: 1.06rem/1.55 Georgia, "Times New Roman", serif; }
+  blockquote p { margin: 0 0 6px; }
+  blockquote cite { display: block; font: .85rem/1.4 system-ui, sans-serif; color: var(--muted); font-style: normal; }
+  a { color: var(--accent); }
+  .cta { display: inline-block; margin-top: 6px; padding: 10px 18px; border-radius: 999px; background: var(--accent); color: #0d1117; text-decoration: none; font-weight: 600; }
+  footer { margin-top: 32px; padding-top: 16px; padding-bottom: 32px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+  footer p { margin: 0 0 6px; }
+  @media (max-width: 820px) {
+    body { font-size: 17px; }
+    .stage { grid-template-columns: 1fr; gap: 16px; }
+    h2 { font-size: 1.6rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <h1>Clonal succession</h1>
+  <p>A walk through Bruce Baguley’s idea of how tumours keep going</p>
+</header>
+
+<main>
+  <div class="stage">
+    <div>
+      <figure>
+        <canvas id="pic" width="560" height="440" role="img"></canvas>
+        <figcaption id="cap"></figcaption>
+      </figure>
+      <nav class="controls" aria-label="Steps">
+        <button id="back" type="button">← Back</button>
+        <button id="pause" type="button">Pause</button>
+        <button id="next" type="button" class="primary">Next →</button>
+        <div class="dots" id="dots"></div>
+      </nav>
+    </div>
+    <section class="text">
+      <div class="textbar">
+        <p class="kicker" id="kicker"></p>
+        <button id="narrate" type="button" hidden><span aria-hidden="true">🔊 </span>Read aloud</button>
+      </div>
+      <h2 id="title" tabindex="-1" aria-live="polite"></h2>
+      <div id="body"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>The animations use invented numbers to show the shape of the idea. They are not measurements.</p>
+  <p>Quotes are from Bruce Baguley’s memoir draft.
+    <a href="v1.html">Previous front page</a> ·
+    <a href="animations/clonal-succession-cycle.html">Full simulation</a> ·
+    <a href="https://github.com/bagg3rs/clonal-succession">Source on GitHub</a></p>
+</footer>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------- content
+const ISSUES = "https://github.com/bagg3rs/clonal-succession/issues";
+const BRUCE = p => `Bruce Baguley, memoir draft, p. ${p}`;
+
+const STEPS = [
+  {
+    title: "More questions than answers", scene: "dishes",
+    body: `<p>Bruce Baguley is a cancer researcher in Auckland. For years he and Elaine Marshall grew cells taken straight from patients’ tumours. Those cells did not behave like the cell lines labs grow from them over three to twelve months.</p>
+      <p>In some samples lots of cells were dividing, and in others almost none.</p>`,
+    quotes: [{ q: "The question that must be answered now is why? What has changed?", who: BRUCE(209) }],
+    cap: "Left: cells straight from a patient, a mix of families with few dividing. Right: a lab cell line, one family, nearly all dividing.",
+    alt: "Two dishes of cells. The patient sample is mixed and mostly resting; the cell line is uniform and mostly dividing.",
+  },
+  {
+    title: "How healthy tissue renews itself", scene: "tissue",
+    body: `<p>Healthy tissue renews itself from stem cells that sit quietly most of the time. In the picture each ring is a stem cell.</p>
+      <p>When one starts, its family of cells grows, settles into doing the tissue’s work, and in time dies off. Then the next stem cell takes over.</p>`,
+    quotes: [{ q: "…if you follow one particular stem cell, it produces a clone of cells and then eventually all those cells differentiate, and they sustain that tissue until they start to run out. When that happens, another stem cell sparks into life…", who: BRUCE(209) }],
+    cap: "Rings are stem cells. Paired dots are dividing; solid pale dots have finished differentiating. Each colour is one stem cell’s family.",
+    alt: "Stem cells around a patch of tissue take turns: one family grows, settles, dies off, and the next takes over.",
+  },
+  {
+    title: "The usual picture", scene: "immortal",
+    body: `<p>The usual explanation is that a mutation lets one family of tumour cells keep dividing forever.</p>`,
+    quotes: [{ q: "This idea of immortalisation has become commonly accepted, the notion that tumour cells are different from normal cells because they mutate and continue to divide forever.", who: BRUCE(210) }],
+    cap: "One family that never stops dividing. The dots get smaller as the count grows.",
+    alt: "A single family of cells that keeps dividing and growing without limit.",
+  },
+  {
+    title: "Bruce’s idea: a relay of clones", scene: "relay",
+    body: `<p>Bruce’s idea is that tumour cells are mortal, like healthy ones, and each family runs out in the end. The tumour keeps going because stem cells inside it take turns.</p>
+      <p>The difference from healthy tissue is that tumour cells don’t finish differentiating, so they never properly do the tissue’s work. The strip underneath shows which family holds the tumour over time.</p>`,
+    quotes: [
+      { q: "The samples of the patients showed that the tumour cells actually behave more like normal tissue, which means that they are in fact mortal and won’t reproduce forever. But because of stem cells within the tumour cells (just like in normal healthy cells), they can renew themselves and there is a clonal succession in the tumour.", who: BRUCE(210) },
+      { q: "We found that tumours are not composed of one cell lineage.", who: "Elaine Marshall, quoted in Bruce Baguley, memoir draft, p. 209", elaine: true },
+    ],
+    cap: "Hollow dots stopped dividing without finishing differentiating. The strip shows each family’s share of the tumour over the last minute.",
+    alt: "Families of tumour cells take turns holding the tumour; a strip below shows the changing shares.",
+  },
+  {
+    title: "Why the same drug can work, then not", scene: "dose",
+    body: `<p>Many older cancer drugs act mainly on cells that are dividing. If a tumour is a relay, how much a dose removes depends on where the relay has got to: a lot while a family is growing, very little once it has settled.</p>
+      <p>Here each dose removes most of the cells that are dividing at that moment, and none of the others.</p>`,
+    quotes: [
+      { q: "Some samples may be dominated by cells that show as proliferating rapidly, and they are the ones seemingly sensitive to all drugs.", who: BRUCE(211) },
+      { q: "…we can’t assume that what works on one colony of cells will work on the next.", who: BRUCE(210) },
+    ],
+    cap: "A dose every few seconds. Each bar is the share of the tumour that dose removed.",
+    alt: "Doses given at regular intervals remove a large share of the tumour at some moments and almost none at others.",
+  },
+  {
+    title: "It depends when you take the sample", scene: "sample",
+    body: `<p>A surgical sample is a snapshot. Taken while a family is growing, it shows lots of cells dividing. Taken a little later, from the same tumour, it shows almost none.</p>
+      <p>That could explain why the samples Bruce and Elaine studied varied so much from one patient to the next.</p>`,
+    quotes: [{ q: "…we need to pay attention to the stage that the tumour is in when we take the surgical sample. Sometimes it will be in its actively growing phase, other times the cell will have almost petered out…", who: BRUCE(211) }],
+    cap: "A sample every few seconds. Each bar is the share of cells dividing at that moment.",
+    alt: "Samples taken at regular intervals from the same relay show very different shares of dividing cells.",
+  },
+  {
+    title: "What wakes the next stem cell?", scene: "wake",
+    body: `<p>Something tells a quiet stem cell that it is time to start, and nobody yet knows what.</p>
+      <p>It could be a signal sent to each stem cell, holding it back until the active family fades. Or it could be a change in something they all draw on, such as room becoming free. With a billion cells in a tumour, a signal sent to each one has a long way to travel.</p>`,
+    quotes: [{ q: "If we can get a mathematical grasp on it, this idea of alternating rates of proliferation of cells, we can develop a model that would help us understand the whole process better.", who: BRUCE(211) }],
+    cap: "No diagram of the options here, because this is the open question.",
+    alt: "Quiet stem cells around a tumour, with a question mark.",
+  },
+  {
+    title: "The ovary picks one at a time", scene: "ovary",
+    body: `<p>In early conversations about this project, Bruce compared the stem cell niche to the ovary. Each cycle many follicles start to grow, but usually only one releases an egg.</p>
+      <p>A <a href="https://www.biorxiv.org/content/10.64898/2026.02.23.707552v1.full">2026 preprint</a>, not yet peer reviewed, proposes a way it could work without any follicle being chosen in advance. FSH rises until it crosses one follicle’s threshold, and that follicle is picked. Its oestradiol pulls FSH back down, and the rest fall below what they need. Which one wins is down to chance.</p>
+      <p>Here two get picked about once in every 100 cycles.</p>`,
+    quotes: [],
+    cap: "Each follicle needs FSH above its own mark (the ticks on the bar). Thresholds are redrawn at random every cycle.",
+    alt: "Follicles grow as FSH rises; the first to reach its threshold is picked, FSH falls, and the rest shrink.",
+  },
+  {
+    title: "So which is it in a tumour?", scene: "open",
+    body: `<p>If tumours do run as a relay, it matters for how drugs are tested and how samples are read. But it hasn’t been shown yet, and what wakes the next stem cell is still an open question.</p>
+      <p>If you work on stem cells, tumour sampling or modelling and can see a way to test this, please get in touch.</p>`,
+    quotes: [{ q: "For me this theory is very interesting, but the problem is how do you prove it, particularly using limited resources?", who: BRUCE(211) }],
+    after: `<p><a class="cta" href="${ISSUES}">Get in touch on GitHub</a></p>`,
+    cap: "The relay keeps running. What starts each new family is still unknown.",
+    alt: "The relay of clones continuing, with a question mark.",
+  },
+];
+
+// ---------------------------------------------------------------- drawing helpers
+const W = 560, H = 440;
+const PAL = ["#f72585", "#4cc9f0", "#ffd166", "#06d6a0", "#b892ff", "#ff8c42"];
+const famColour = f => PAL[((f % PAL.length) + PAL.length) % PAL.length];
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function tint(hex, k) {             // mix towards the dark panel by k (0..1)
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v + ([21, 27, 36][i] - v) * k));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+// Points packed evenly in a disc (sunflower pattern).
+function disc(n, cx, cy, R) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const r = R * Math.sqrt((i + 0.5) / n), a = i * 2.399963;
+    pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+  }
+  return pts;
+}
+
+// state: 1 dividing, 2 stopped (finished = healthy tissue, unfinished = tumour), 3 dying
+function drawCell(ctx, x, y, r, colour, state, tumour, alpha, t) {
+  const base = ctx.globalAlpha;
+  ctx.globalAlpha = base * alpha;
+  if (state === 1) {               // a cell mid-division: two overlapping halves
+    const d = r * (0.42 + 0.12 * Math.sin(t * 5 + x));
+    ctx.fillStyle = colour;
+    ctx.beginPath(); ctx.arc(x - d, y, r * 0.68, 0, 7); ctx.arc(x + d, y, r * 0.68, 0, 7); ctx.fill();
+  } else if (tumour) {             // stopped without finishing: hollow
+    ctx.strokeStyle = colour; ctx.lineWidth = Math.max(1.2, r * 0.32);
+    ctx.beginPath(); ctx.arc(x, y, r * 0.72, 0, 7); ctx.stroke();
+  } else {                         // finished differentiating: solid and pale
+    ctx.fillStyle = tint(colour, 0.45);
+    ctx.beginPath(); ctx.arc(x, y, r * 0.86, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = base;
+}
+
+// On a narrow screen the canvas is scaled down, so scale its text back up (within limits).
+let textScale = 1;
+function label(ctx, text, x, y, opts = {}) {
+  ctx.font = `${opts.bold ? "600 " : ""}${Math.round((opts.size || 15) * textScale)}px system-ui, -apple-system, sans-serif`;
+  ctx.fillStyle = opts.colour || "#8b949e";
+  ctx.textAlign = opts.align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x, y);
+}
+
+function legend(ctx, tumour, rings) {
+  const c = PAL[0];
+  let y = 18;
+  drawCell(ctx, 18, y, 7, c, 1, tumour, 1, 0); label(ctx, "dividing", 32, y); y += 22 * textScale;
+  drawCell(ctx, 18, y, 7, c, 2, tumour, 1, 0);
+  label(ctx, tumour ? "stopped, not finished" : "finished differentiating", 32, y); y += 22 * textScale;
+  if (rings) { ring(ctx, 18, y, "dormant", 0, 0); label(ctx, "stem cell", 32, y); }
+}
+
+function ring(ctx, x, y, state, fam, t) {
+  ctx.lineWidth = state === "active" ? 3.5 : 2;
+  ctx.setLineDash(state === "spent" ? [3, 3] : []);
+  ctx.strokeStyle = state === "active" ? famColour(fam) : state === "spent" ? "#3a4554" : "#8b949e";
+  ctx.fillStyle = state === "active" ? tint(famColour(fam), 0.7) : "#151b24";
+  const r = state === "active" ? 8 + Math.sin(t * 4) * 0.8 : 7;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function questionMark(ctx, x, y, size, alpha) {
+  ctx.globalAlpha = alpha;
+  ctx.font = `600 ${size}px Georgia, "Times New Roman", serif`;
+  ctx.fillStyle = "#2e6f95"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("?", x, y);
+  ctx.globalAlpha = 1;
+}
+
+// ---------------------------------------------------------------- relay of clones
+// Stem cells around a disc of cells take turns. Each family divides a limited number
+// of times, stops, and dies off; the next stem cell wakes once the active family
+// has faded. The model does not say WHAT wakes it — that is the open question.
+class Relay {
+  constructor(o) {
+    Object.assign(this, { n: 240, cx: 280, cy: 175, R: 132, tumour: true, rings: 6,
+      divRate: 1.5, genLimit: 8, life: [6, 10], wakeAt: 0.6 }, o);
+    this.slots = disc(this.n, this.cx, this.cy, this.R).map(p => ({ ...p, fam: -1, st: 0, t: 0, gen: 0, life: 0 }));
+    this.cellR = this.R / Math.sqrt(this.n) * 0.95;
+    this.ringPos = [];
+    for (let i = 0; i < this.rings; i++) {
+      const a = -Math.PI / 2 + i * 2 * Math.PI / this.rings;   // one ring at the top keeps the legend corner clear
+      this.ringPos.push({ x: this.cx + (this.R + 20) * Math.cos(a), y: this.cy + (this.R + 20) * Math.sin(a),
+        state: "dormant", fam: -1 });
+    }
+    this.nextRing = 0; this.nextFam = 0; this.time = 0;
+    this.hist = []; this.histT = 0;
+    this.wake();
+  }
+  wake() {
+    if (!this.ringPos.some(r => r.state === "dormant"))
+      this.ringPos.forEach(r => { if (r.state === "spent") r.state = "dormant"; });
+    let k = this.nextRing;
+    for (let i = 0; i < this.rings && this.ringPos[k].state !== "dormant"; i++) k = (k + 1) % this.rings;
+    const ring = this.ringPos[k];
+    const fam = this.nextFam++;
+    Object.assign(ring, { state: "active", fam });
+    this.active = fam; this.peak = 1; this.nextRing = (k + 1) % this.rings;
+    let best = null, bd = Infinity;
+    for (const s of this.slots) {                    // nearest free spot to the ring
+      const d = (s.x - ring.x) ** 2 + (s.y - ring.y) ** 2 + (s.st === 0 ? 0 : 1e6);
+      if (d < bd) { bd = d; best = s; }
+    }
+    Object.assign(best, { fam, st: 1, gen: 0, t: 0 });
+  }
+  stop(s) { s.st = 2; s.t = 0; s.life = rnd(...this.life); }
+  step(dt) {
+    this.time += dt;
+    const empties = this.slots.filter(s => s.st === 0);
+    for (const s of this.slots) {
+      if (s.st === 1) {
+        if (Math.random() < this.divRate * dt) {
+          s.gen++;
+          let best = -1, bd = Infinity;
+          for (let i = 0; i < empties.length; i++) {
+            const e = empties[i], d = (e.x - s.x) ** 2 + (e.y - s.y) ** 2 + Math.random() * 40;
+            if (d < bd) { bd = d; best = i; }
+          }
+          if (best >= 0) {
+            const e = empties.splice(best, 1)[0];
+            Object.assign(e, { fam: s.fam, gen: s.gen, st: 1, t: 0 });
+            if (e.gen >= this.genLimit) this.stop(e);
+          }
+          if (s.gen >= this.genLimit || best < 0) this.stop(s);
+        }
+      } else if (s.st === 2) {
+        s.t += dt;
+        if (s.t > s.life) { s.st = 3; s.t = 0; }
+      } else if (s.st === 3) {
+        s.t += dt;
+        if (s.t > 0.8) { s.st = 0; s.fam = -1; }
+      }
+    }
+    const c = this.count(this.active);
+    this.peak = Math.max(this.peak, c.total);
+    for (const r of this.ringPos)
+      if (r.state === "active" && r.fam !== this.active && this.count(r.fam).total === 0) r.state = "spent";
+    if (c.div === 0 && c.total <= this.wakeAt * this.peak) {
+      const r = this.ringPos.find(r => r.fam === this.active && r.state === "active");
+      if (r && c.total === 0) r.state = "spent";
+      this.wake();
+    }
+    this.histT += dt;
+    if (this.histT >= 0.2) {
+      this.histT -= 0.2;
+      const fams = {};
+      for (const s of this.slots) if (s.st === 1 || s.st === 2) fams[s.fam] = (fams[s.fam] || 0) + 1;
+      this.hist.push(fams);
+      if (this.hist.length > 300) this.hist.shift();
+    }
+  }
+  count(fam) {
+    let total = 0, div = 0;
+    for (const s of this.slots) if (s.fam === fam && (s.st === 1 || s.st === 2)) { total++; if (s.st === 1) div++; }
+    return { total, div };
+  }
+  dividingShare() {
+    let occ = 0, div = 0;
+    for (const s of this.slots) if (s.st === 1 || s.st === 2) { occ++; if (s.st === 1) div++; }
+    return occ ? div / occ : 0;
+  }
+  dose() {                                           // remove most cells dividing right now (80%)
+    let occ = 0, hit = 0;
+    for (const s of this.slots) {
+      if (s.st === 1 || s.st === 2) occ++;
+      if (s.st === 1 && Math.random() < 0.8) { hit++; s.st = 3; s.t = 0; }
+    }
+    return occ ? hit / occ : 0;
+  }
+  draw(ctx) {
+    ctx.fillStyle = "#1b2230";
+    ctx.beginPath(); ctx.arc(this.cx, this.cy, this.R + 6, 0, 7); ctx.fill();
+    for (const s of this.slots) {
+      if (s.st === 0) continue;
+      const a = s.st === 3 ? clamp(1 - s.t / 0.8, 0, 1) : 1;
+      drawCell(ctx, s.x, s.y, this.cellR, famColour(s.fam), s.st === 3 ? 2 : s.st, this.tumour, a, this.time);
+    }
+    for (const r of this.ringPos) ring(ctx, r.x, r.y, r.state, r.fam, this.time);
+  }
+  drawStrip(ctx, x, y, w, h) {
+    label(ctx, "Which family holds the tumour", x, y - 12, { size: 14 });
+    ctx.fillStyle = "#1b2230"; ctx.fillRect(x, y, w, h);
+    const cw = w / 300;
+    this.hist.forEach((fams, i) => {
+      const total = Object.values(fams).reduce((a, b) => a + b, 0);
+      if (!total) return;
+      let yy = y + h;
+      for (const f of Object.keys(fams).map(Number).sort((a, b) => a - b)) {
+        const hh = h * fams[f] / total;
+        ctx.fillStyle = famColour(f);
+        ctx.fillRect(x + (300 - this.hist.length + i) * cw, yy - hh, cw + 0.6, hh);
+        yy -= hh;
+      }
+    });
+    label(ctx, "a minute ago", x, y + h + 11, { size: 13 });
+    label(ctx, "now", x + w, y + h + 11, { size: 13, align: "right" });
+  }
+}
+
+function bars(ctx, values, x, y, w, h, title, n) {
+  label(ctx, title, x, y - 12, { size: 14 });
+  ctx.strokeStyle = "#2f3a48"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x, y + h + 0.5); ctx.lineTo(x + w, y + h + 0.5); ctx.stroke();
+  const bw = w / n;
+  values.slice(-n).forEach((v, i) => {
+    const bh = Math.max(1, (h - 16) * v);           // leave room for the % label under the title
+    ctx.fillStyle = "#2e6f95";
+    ctx.fillRect(x + i * bw + 4, y + h - bh, bw - 8, bh);
+    label(ctx, `${Math.round(v * 100)}%`, x + i * bw + bw / 2, y + h - bh - 8, { size: 13, align: "center", colour: "#e6edf3" });
+  });
+}
+
+// ---------------------------------------------------------------- scenes
+function relayScene(opts, extra = {}) {
+  const r = new Relay(opts);
+  return {
+    warm: secs => { for (let t = 0; t < secs; t += 1 / 30) { r.step(1 / 30); if (extra.step) extra.step(1 / 30, r); } },
+    step: dt => { r.step(dt); if (extra.step) extra.step(dt, r); },
+    draw: ctx => { r.draw(ctx); legend(ctx, r.tumour, true); if (extra.draw) extra.draw(ctx, r); },
+  };
+}
+
+const SCENES = {
+  dishes() {
+    const make = (cx, mixed) => disc(110, cx, 200, 108).map(p => {
+      const a = Math.atan2(p.y - 200, p.x - cx) + rnd(-0.5, 0.5);
+      return { ...p, fam: mixed ? Math.floor(((a + Math.PI) / (2 * Math.PI)) * 3) % 3 : 0,
+        st: Math.random() < (mixed ? 0.12 : 0.92) ? 1 : 2 };
+    });
+    const L = make(150, true), Rt = make(410, false);
+    let t = 0;
+    return {
+      step: dt => { t += dt; },
+      draw: ctx => {
+        for (const [cells, cx, text] of [[L, 150, "Straight from a patient"], [Rt, 410, "Lab cell line"]]) {
+          ctx.fillStyle = "#1b2230"; ctx.beginPath(); ctx.arc(cx, 200, 116, 0, 7); ctx.fill();
+          for (const c of cells) drawCell(ctx, c.x, c.y, 9, famColour(c.fam), c.st, true, 1, t);
+          label(ctx, text, cx, 345, { align: "center", bold: true, size: 15, colour: "#e6edf3" });
+          const share = cells.filter(c => c.st === 1).length / cells.length;
+          label(ctx, `${Math.round(share * 100)}% dividing`, cx, 367, { align: "center" });
+        }
+        legend(ctx, true, false);
+      },
+    };
+  },
+
+  tissue: () => relayScene({ tumour: false, cy: 200, R: 150, n: 260 }),
+
+  immortal() {
+    let count = 1, acc = 0, t = 0;
+    const MAX = 2400;
+    return {
+      warm(secs) { for (let s = 0; s < secs; s += 1 / 30) this.step(1 / 30); },
+      step(dt) {
+        t += dt;
+        if (count >= MAX) return;                  // it never runs out; stay there
+        acc += count * 0.45 * dt;
+        const born = Math.floor(acc); acc -= born;
+        count = Math.min(MAX, count + born);
+      },
+      draw(ctx) {
+        const R = 165, pts = disc(count, 280, 205, R * Math.min(1, Math.sqrt(count / 60)));
+        const r = Math.min(10, 0.95 * R / Math.sqrt(Math.max(count, 60)));
+        ctx.fillStyle = "#1b2230"; ctx.beginPath(); ctx.arc(280, 205, R + 8, 0, 7); ctx.fill();
+        for (const p of pts) drawCell(ctx, p.x, p.y, r, PAL[0], 1, true, 1, t);
+        label(ctx, `Cells: ${count.toLocaleString("en-NZ")}`, 280, 400, { align: "center", bold: true, size: 15, colour: "#e6edf3" });
+        label(ctx, count >= MAX ? "…and on, forever" : "Still dividing: all of them", 280, 422, { align: "center" });
+        legend(ctx, true, false);
+      },
+    };
+  },
+
+  relay: () => relayScene({}, {
+    draw: (ctx, r) => r.drawStrip(ctx, 30, 362, 500, 44),
+  }),
+
+  dose() {
+    const hits = [];
+    let next = 2.5, flash = 0;
+    return relayScene({}, {
+      step(dt, r) {
+        next -= dt; flash = Math.max(0, flash - dt);
+        if (next <= 0) { hits.push(r.dose()); if (hits.length > 8) hits.shift(); next = 9; flash = 0.5; }
+      },
+      draw(ctx, r) {
+        if (flash > 0) {
+          ctx.globalAlpha = flash; ctx.fillStyle = "#2e6f95";
+          ctx.beginPath(); ctx.arc(r.cx, r.cy, r.R + 10, 0, 7); ctx.lineWidth = 6; ctx.strokeStyle = "#2e6f95"; ctx.stroke();
+          ctx.globalAlpha = 1;
+          label(ctx, "dose", r.cx + r.R + 30, r.cy - r.R + 10, { bold: true, colour: "#2e6f95" });
+        }
+        label(ctx, `Dividing now: ${Math.round(r.dividingShare() * 100)}%`, 548, 18, { align: "right", size: 13 });
+        bars(ctx, hits, 30, 360, 500, 56, "Share removed by each dose", 8);
+      },
+    });
+  },
+
+  sample() {
+    const samples = [];
+    let next = 1.5, flash = 0;
+    return relayScene({}, {
+      step(dt, r) {
+        next -= dt; flash = Math.max(0, flash - dt);
+        if (next <= 0) { samples.push(r.dividingShare()); if (samples.length > 10) samples.shift(); next = 3; flash = 0.4; }
+      },
+      draw(ctx, r) {
+        if (flash > 0) {
+          ctx.globalAlpha = flash / 0.4 * 0.35; ctx.fillStyle = "#fff";
+          ctx.beginPath(); ctx.arc(r.cx, r.cy, r.R + 6, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+        }
+        bars(ctx, samples, 30, 360, 500, 56, "Share of cells dividing in each sample", 10);
+      },
+    });
+  },
+
+  wake() {
+    const r = new Relay({});
+    for (let s = 0; s < 40; s += 1 / 30) r.step(1 / 30);
+    r.slots.forEach(s => { if (s.st === 1) r.stop(s); });           // freeze: nothing dividing
+    r.ringPos.forEach(g => { g.state = "dormant"; });
+    let t = 0;
+    return {
+      step: dt => { t += dt; },
+      draw: ctx => {
+        ctx.globalAlpha = 0.35; r.draw(ctx); ctx.globalAlpha = 1;
+        r.ringPos.forEach((g, i) => ring(ctx, g.x, g.y, "dormant", 0, t));
+        questionMark(ctx, r.cx, r.cy, 150, 0.75 + 0.15 * Math.sin(t * 2));
+        label(ctx, "Which one starts next, and what tells it to?", 280, 380, { align: "center", size: 15, colour: "#e6edf3" });
+      },
+    };
+  },
+
+  ovary() {
+    const ov = new Ovary(FOLLICLE, Math.random);
+    let cycles = 0, doubles = 0, acc = 0, t = 0;
+    const N = FOLLICLE.n;
+    const fx = i => 50 + (i % 5) * 84, fy = i => (i < 5 ? 130 : 270);
+    const by = v => 390 - (v - 0.3) / 0.7 * 330;              // value → y on the FSH bar
+    return {
+      warm(secs) { for (let s = 0; s < secs; s += 1 / 30) this.step(1 / 30); },
+      step(dt) {
+        t += dt; acc += dt;
+        while (acc >= FOLLICLE.dt) {
+          acc -= FOLLICLE.dt;
+          if (ov.step()) {
+            cycles++; if (ov.picked() > 1) doubles++;
+            ov.reset();
+          }
+        }
+      },
+      draw(ctx) {
+        for (let i = 0; i < N; i++) {
+          const sel = ov.sel[i];
+          let r, a = 1;
+          if (sel) r = 22 + 18 * clamp(ov.grow, 0, 1);
+          else {
+            const near = clamp((ov.F - (ov.th[i] - 0.3)) / 0.3, 0, 1);
+            r = 13 + 15 * near; a = 0.4 + 0.6 * near;
+          }
+          ctx.globalAlpha = a;
+          ctx.fillStyle = sel ? tint(PAL[2], 0.2) : "#2a2438";
+          ctx.strokeStyle = sel ? PAL[0] : "#6e6290"; ctx.lineWidth = sel ? 3 : 1.5;
+          ctx.beginPath(); ctx.arc(fx(i), fy(i), r, 0, 7); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = sel ? PAL[0] : "#6e6290";
+          ctx.beginPath(); ctx.arc(fx(i), fy(i), Math.max(3, r * 0.25), 0, 7); ctx.fill();
+          ctx.globalAlpha = 1;
+          if (sel && ov.phase === "release") {
+            const k = clamp(ov.relT / 1.2, 0, 1);
+            ctx.fillStyle = PAL[0];
+            ctx.beginPath(); ctx.arc(fx(i) + k * 40, fy(i) - k * 50, 5, 0, 7); ctx.fill();
+          }
+        }
+        // FSH and oestradiol bars
+        const bx = 470;
+        ctx.fillStyle = "#1b2230"; ctx.fillRect(bx, 60, 26, 330); ctx.fillRect(bx + 40, 60, 26, 330);
+        ctx.fillStyle = "#2e6f95"; const fy0 = by(clamp(ov.F, 0.3, 1)); ctx.fillRect(bx, fy0, 26, 390 - fy0);
+        ctx.fillStyle = PAL[4]; const eh = clamp(ov.E / FOLLICLE.eMax, 0, 1) * 330; ctx.fillRect(bx + 40, 390 - eh, 26, eh);
+        for (let i = 0; i < N; i++) {
+          ctx.strokeStyle = ov.sel[i] ? PAL[0] : "#8b949e"; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(bx - 12, by(ov.th[i])); ctx.lineTo(bx, by(ov.th[i])); ctx.stroke();
+        }
+        label(ctx, "FSH", bx + 13, 46, { align: "center", bold: true, colour: "#e6edf3" });
+        label(ctx, "oestradiol", bx + 53, 405, { align: "center", size: 13 });
+        label(ctx, "ticks: each follicle’s need", bx - 14, 405, { align: "right", size: 13 });
+        label(ctx, "Follicles", 50, 40, { bold: true, colour: "#e6edf3" });
+        label(ctx, `Cycles: ${cycles}   Two picked: ${doubles}`, 50, 405);
+      },
+    };
+  },
+
+  open: () => relayScene({}, {
+    draw: (ctx, r) => r.drawStrip(ctx, 30, 362, 500, 44),
+  }),
+};
+
+// ---------------------------------------------------------------- follicle model start
+// After the 2026 bioRxiv model (10.64898/2026.02.23.707552): FSH rises; the first
+// follicle whose threshold it crosses is picked; that follicle's oestradiol pulls FSH
+// back down, so the rest fall short. Feedback is not instant, so very rarely a second
+// follicle crosses its threshold before FSH turns. Invented numbers, tuned so two are
+// picked about 1 cycle in 100 (tests/follicle-picks.js measures it).
+const FOLLICLE = { n: 10, lo: 0.55, hi: 0.95, f0: 0.4, rise: 0.08, eRate: 7.7, eMax: 0.25, floor: 0.32, dt: 0.002 };
+
+class Ovary {
+  constructor(P, rand) { this.P = P; this.rand = rand; this.reset(); }
+  reset() {
+    const P = this.P;
+    this.th = Array.from({ length: P.n }, () => P.lo + this.rand() * (P.hi - P.lo));
+    this.sel = new Array(P.n).fill(false);
+    this.F = P.f0; this.E = 0; this.grow = 0; this.relT = 0; this.phase = "rise";
+  }
+  picked() { return this.sel.filter(Boolean).length; }
+  step() {                                    // one tick of P.dt; true when the cycle has finished
+    const P = this.P, dt = P.dt;
+    if (this.phase === "release") { this.relT += dt; return this.relT > 2; }
+    const any = this.picked() > 0;
+    if (any) { this.E = Math.min(P.eMax, this.E + P.eRate * dt); this.grow += dt / 3; }
+    const dF = P.rise - this.E;
+    this.F = Math.max(P.floor, this.F + dF * dt);
+    if (this.phase === "rise") {
+      for (let i = 0; i < P.n; i++) if (!this.sel[i] && this.F >= this.th[i]) this.sel[i] = true;
+      if (dF < 0) this.phase = "fall";
+    } else if (this.F <= P.floor) {
+      this.phase = "release";
+    }
+    return false;
+  }
+}
+
+function mulberry32(a) {
+  return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+function measureDoubles(runs, seed) {        // share of cycles where two or more are picked
+  const ov = new Ovary(FOLLICLE, mulberry32(seed));
+  let doubles = 0;
+  for (let k = 0; k < runs; k++) {
+    ov.reset();
+    while (ov.phase !== "release") ov.step();
+    if (ov.picked() > 1) doubles++;
+  }
+  return doubles / runs;
+}
+// ---------------------------------------------------------------- follicle model end
+
+// ---------------------------------------------------------------- page
+if (typeof document !== "undefined") {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const canvas = document.getElementById("pic");
+  const ctx = canvas.getContext("2d");
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const $ = id => document.getElementById(id);
+  const backBtn = $("back"), nextBtn = $("next"), pauseBtn = $("pause"), narrateBtn = $("narrate");
+
+  let cur = 0, scene = null, paused = reduce, dirty = true, last = performance.now();
+  const rescale = () => { textScale = clamp(W / (canvas.clientWidth || W), 1, 1.3); dirty = true; };
+  rescale(); window.addEventListener("resize", rescale);
+
+  const dots = STEPS.map((s, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("aria-label", `Step ${i + 1}: ${s.title}`);
+    b.addEventListener("click", () => go(i));
+    $("dots").appendChild(b);
+    return b;
+  });
+
+  function quoteHTML(q) {
+    return `<blockquote><p>“${q.q}”</p><cite>${q.who}</cite></blockquote>`;
+  }
+
+  function show(i, focus) {
+    cur = clamp(i, 0, STEPS.length - 1);
+    const s = STEPS[cur];
+    $("kicker").textContent = `Step ${cur + 1} of ${STEPS.length}`;
+    $("title").textContent = s.title;
+    $("body").innerHTML = s.body + s.quotes.map(quoteHTML).join("") + (s.after || "");
+    $("cap").textContent = s.cap;
+    canvas.setAttribute("aria-label", s.alt);
+    dots.forEach((d, k) => { if (k === cur) d.setAttribute("aria-current", "step"); else d.removeAttribute("aria-current"); });
+    backBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === STEPS.length - 1;
+    scene = SCENES[s.scene]();
+    // ?warm=N fast-forwards each scene N seconds (handy for screenshots)
+    // relay scenes open with a minute of history; reduced-motion stills land somewhere useful
+    const still = { tissue: 14, immortal: 19, ovary: 3 }[s.scene] || 60;
+    const warm = Number(new URLSearchParams(location.search).get("warm"))
+      || (reduce ? still : ["relay", "dose", "sample", "open"].includes(s.scene) ? 60 : 0);
+    if (warm && scene.warm) scene.warm(warm);
+    dirty = true;
+    history.replaceState(null, "", `#step-${cur + 1}`);
+    if (focus) $("title").focus({ preventScroll: true });
+  }
+
+  // Keep focus on the button pressed; only move it to the title if that button just became disabled.
+  function go(i) {
+    const was = narrating; stopNarration();
+    show(i, false);
+    if (document.activeElement && document.activeElement.disabled) $("title").focus({ preventScroll: true });
+    if (was) startNarration();
+  }
+
+  function setPaused(p) {
+    paused = p;
+    pauseBtn.textContent = p ? "Play" : "Pause";
+    if (narrating) p ? synth.pause() : synth.resume();
+  }
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!paused) { scene.step(dt); dirty = true; }
+    if (dirty) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      scene.draw(ctx);
+      dirty = false;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  backBtn.addEventListener("click", () => go(cur - 1));
+  nextBtn.addEventListener("click", () => go(cur + 1));
+  pauseBtn.addEventListener("click", () => setPaused(!paused));
+  document.addEventListener("keydown", e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "ArrowRight" && cur < STEPS.length - 1) { go(cur + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft" && cur > 0) { go(cur - 1); e.preventDefault(); }
+    else if ((e.key === " " && !/^(BUTTON|A)$/.test(e.target.tagName)) || e.key === "p") { setPaused(!paused); e.preventDefault(); }
+  });
+
+  // ------------------------------------------------ narration (browser speech, a sentence at a time)
+  const synth = window.speechSynthesis;
+  let narrating = false, voice = null, queue = [], token = 0, utterance = null;
+  function pickVoice() {
+    const vs = synth.getVoices();
+    voice = vs.find(v => /^en[-_]NZ/i.test(v.lang)) || vs.find(v => /^en[-_]GB/i.test(v.lang)) || null;
+  }
+  function sentencesFor(i) {
+    const s = STEPS[i], div = document.createElement("div");
+    const parts = [s.title];
+    div.innerHTML = s.body; div.querySelectorAll("p").forEach(p => parts.push(p.textContent));
+    for (const q of s.quotes) parts.push(`In ${q.elaine ? "Elaine Marshall’s" : "Bruce’s"} words: ${q.q.replace(/^…|…$/g, "")}`);
+    // every part must end a sentence, or the split below drops it (trimmed quotes end mid-sentence)
+    const text = parts.map(p => p.trim()).map(p => /[.?!]["”’]?$/.test(p) ? p : p + ".").join(" ");
+    // no lookbehind: older iPad Safari can't parse it, which would break the whole page
+    return (text.match(/[^.?!]+[.?!]+["”’]?/g) || []).map(t => t.trim());
+  }
+  function speakNext(my) {
+    if (!narrating || my !== token) return;
+    if (!queue.length) {
+      if (cur < STEPS.length - 1) { show(cur + 1, false); queue = sentencesFor(cur); }
+      else { stopNarration(); return; }
+    }
+    // held in `utterance` so Safari can't garbage-collect it before onend fires
+    const u = utterance = new SpeechSynthesisUtterance(queue.shift());
+    if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "en-NZ";
+    u.rate = 0.95;
+    u.onend = () => speakNext(my);
+    u.onerror = e => { if (e.error !== "interrupted" && e.error !== "canceled") stopNarration(); };
+    synth.speak(u);
+  }
+  function startNarration() {
+    narrating = true; token++;
+    narrateBtn.innerHTML = `<span aria-hidden="true">■ </span>Stop reading`;
+    if (paused && !reduce) setPaused(false);
+    const my = token;
+    // Speak straight away so iOS keeps the tap's permission; Chrome can drop a speak()
+    // issued right after cancel(), so only wait when something was already speaking.
+    if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(() => speakNext(my), 50); }
+    else speakNext(my);
+  }
+  function stopNarration() {
+    if (!narrating) return;
+    narrating = false; token++;
+    narrateBtn.innerHTML = `<span aria-hidden="true">🔊 </span>Read aloud`;
+    synth.cancel(); synth.resume();               // resume() clears a paused queue in Safari
+  }
+  // Narration is optional: nothing here may stop the page from rendering.
+  try {
+    if (synth && window.SpeechSynthesisUtterance) {
+      pickVoice();
+      if (synth.addEventListener) synth.addEventListener("voiceschanged", pickVoice);
+      else synth.onvoiceschanged = pickVoice;
+      narrateBtn.hidden = false;
+      narrateBtn.addEventListener("click", () => narrating ? stopNarration() : startNarration());
+    }
+  } catch (err) { narrateBtn.hidden = true; }
+
+  const stepFromHash = () => { const m = location.hash.match(/^#step-(\d+)$/); return m ? Number(m[1]) - 1 : 0; };
+  window.addEventListener("hashchange", () => { if (stepFromHash() !== cur) go(stepFromHash()); });
+  show(stepFromHash(), false);
+  setPaused(paused);
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
