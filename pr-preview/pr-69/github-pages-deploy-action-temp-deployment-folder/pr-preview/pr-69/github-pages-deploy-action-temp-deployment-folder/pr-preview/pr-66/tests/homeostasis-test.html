@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Homeostasis Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .row {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            flex: 2;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 10px;
+            margin-right: 20px;
+        }
+        .stats-container {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        .slider-container label {
+            margin-right: 10px;
+        }
+        .value-display {
+            margin-left: 10px;
+            min-width: 40px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        .metric {
+            margin-bottom: 15px;
+        }
+        .metric-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            background-color: #f9f9f9;
+            padding: 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .event-log {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event {
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        #error-message {
+            color: red;
+            padding: 10px;
+            background-color: #ffeeee;
+            border: 1px solid #ffcccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Population Homeostasis Test</h1>
+        
+        <div id="error-message"></div>
+        
+        <div class="controls">
+            <button id="startBtn">Start</button>
+            <button id="stopBtn">Stop</button>
+            <button id="resetBtn">Reset</button>
+            
+            <div class="slider-container">
+                <label for="speedSlider">Speed:</label>
+                <input type="range" id="speedSlider" min="1" max="5" step="1" value="1">
+                <span class="value-display" id="speedValue">1x</span>
+            </div>
+            
+            <div class="slider-container">
+                <label for="maxCellsSlider">Max Cells:</label>
+                <input type="range" id="maxCellsSlider" min="50" max="200" step="10" value="100">
+                <span class="value-display" id="maxCellsValue">100</span>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="canvas-container">
+                <canvas id="simulationCanvas" width="800" height="600"></canvas>
+            </div>
+            
+            <div class="stats-container">
+                <h2>Homeostasis Metrics</h2>
+                
+                <div class="metric">
+                    <div class="metric-title">Population</div>
+                    <div class="metric-value" id="populationValue">0 / 100</div>
+                </div>
+                
+                <div class="metric">
+                    <div class="metric-title">Clone Distribution</div>
+                    <div class="metric-value" id="cloneDistribution">Red: 0%, Green: 0%, Yellow: 0%</div>
+                </div>
+                
+                <div class="metric">
+                    <div class="metric-title">Cell States</div>
+                    <div class="metric-value" id="cellStates">Dividing: 0%, Non-dividing: 0%, Senescent: 0%</div>
+                </div>
+                
+                <div class="metric">
+                    <div class="metric-title">Population Stability</div>
+                    <div class="metric-value" id="populationStability">100%</div>
+                </div>
+                
+                <div class="metric">
+                    <div class="metric-title">Clone Balance</div>
+                    <div class="metric-value" id="cloneBalance">100%</div>
+                </div>
+                
+                <div class="metric">
+                    <div class="metric-title">Resource Competition</div>
+                    <div class="metric-value" id="resourceCompetition">0%</div>
+                </div>
+                
+                <div class="metric">
+                    <div class="metric-title">Boundary Effects</div>
+                    <div class="metric-value" id="boundaryEffects">0%</div>
+                </div>
+                
+                <h2>Event Log</h2>
+                <div class="event-log" id="eventLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Error handling for module loading
+        window.addEventListener('error', function(e) {
+            console.error('Error loading module:', e);
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('error-message').textContent = 'Error loading modules: ' + e.message;
+        });
+        
+        // Try to load the module script
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = 'homeostasis-test.js';
+        script.onerror = function(e) {
+            console.error('Error loading script:', e);
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('error-message').textContent = 'Error loading script: ' + e.target.src;
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
