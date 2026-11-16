@@ -29,7 +29,7 @@ If you work on stem cells, tumour sampling or mathematical modelling and can see
 | `docs/` | Background, research notes, references and the original audio transcript. Some of these describe suppression by the active clone as settled; each carries a status note saying it isn’t. |
 | `models/` | The mathematical framework. |
 | `tests/` | Browser test pages, and `follicle-picks.js`, which checks the ovary model on the front page picks two follicles about once in 100 cycles (`node tests/follicle-picks.js`). |
-| `audio/` | Narration for the front page’s nine steps, one MP3 per step, from a computer-generated voice (Piper, `en_GB-cori-high`). Any file can be swapped for a real recording. |
+| `audio/` | Narration for the front page’s nine steps, one MP3 per step, from a computer-generated voice (Kokoro, `bf_isabella`). Any file can be swapped for a real recording. |
 | `tools/` | `make-narration.py` regenerates `audio/` from the page text (see the setup notes at the top of the script); `narration-text.js` extracts that text. |
 | `archive/` | Superseded notes, scripts and the old roadmap. |
 
