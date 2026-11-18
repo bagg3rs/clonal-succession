@@ -107,7 +107,7 @@
 </main>
 
 <footer>
-  <p>The animations use invented numbers to show the shape of the idea. They are not measurements. The narration is a computer-generated voice.</p>
+  <p>The animations use invented numbers to show the shape of the idea. They are not measurements. The narration is computer-generated. The explanation is read in a synthesised version of Rich Baguley’s voice, built from a recording he made for it; Bruce’s quotes are read in a synthesised version of his voice, built from his 2012 TVNZ interview, with his permission. Neither recorded these words.</p>
   <p>Quotes are from Bruce Baguley’s memoir draft.
     <a href="v1.html">Previous front page</a> ·
     <a href="animations/clonal-succession-cycle.html">Full simulation</a> ·
@@ -197,9 +197,13 @@ const STEPS = [
   },
   {
     title: "So does a tumour work like this?", scene: "open",
-    body: `<p>If tumours do run as a relay, it matters for how drugs are tested and how samples are read. But it hasn’t been shown yet, and what wakes the next stem cell is still an open question.</p>
+    body: `<p>Bruce has been circling this question for fifty years. In a 2012 interview he described an oncologist asking him, soon after he came back to New Zealand, why a new leukaemia drug worked for some patients and not others.</p>
+      <p>If tumours do run as a relay, that is one answer. But it hasn’t been shown yet, and what wakes the next stem cell is still an open question.</p>
       <p>If you work on stem cells, tumour sampling or modelling and can see a way to test this, please get in touch.</p>`,
-    quotes: [{ q: "For me this theory is very interesting, but the problem is how do you prove it, particularly using limited resources?", who: BRUCE(211) }],
+    quotes: [
+      { q: "We’ve got a new drug for leukaemia patients, and it works in some cases and not others. Why is that? And I started to look at that. I’m still looking at these things.", who: "Bruce Baguley, TVNZ Talk Talk interview, 2012, recalling a question from the 1970s" },
+      { q: "For me this theory is very interesting, but the problem is how do you prove it, particularly using limited resources?", who: BRUCE(211) },
+    ],
     after: `<p><a class="cta" href="${ISSUES}">Get in touch on GitHub</a></p>`,
     cap: "The relay keeps running. What starts each new family is still unknown.",
     alt: "The relay of clones continuing, with a question mark.",
